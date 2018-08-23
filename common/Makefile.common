@@ -1,0 +1,31 @@
+CFLAGS?=-O3 -Wall -Wno-unused-label
+
+SRC_DIR = src
+BUILD_DIR = build
+
+SRCS = main.c \
+	kernels/pipe_stages.c
+LOCAL_SRCS = $(patsubst %, $(SRC_DIR)/%, $(SRCS))
+GEM5_DMA_SRC = gem5/dma_interface.c
+GEM5_SYS_SRCS = gem5/aladdin_sys_connection.cpp gem5/aladdin_sys_constants.cpp
+GEM5_SRCS = $(patsubst %, $(ALADDIN_HOME)/%, $(GEM5_DMA_SRC) $(GEM5_SYS_SRCS))
+
+INCLUDES += -I$(ALADDIN_HOME) \
+	    -I$(ALADDIN_HOME)/../../include \
+	    -I$(ALADDIN_HOME)/gem5 \
+            -I$(SRC_DIR)
+
+EXE = camera-pipe
+
+NATIVE = $(BUILD_DIR)/$(EXE)-native
+
+native: $(LOCAL_SRCS) $(GEM5_SRCS)
+	@echo Building benchmark $(EXEC) for native machine.
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(NATIVE) $^
+clean:
+	rm -f camera_pipe
+
+export WORKLOAD = demosaic_nn_hw
+include common/Makefile.tracer
+include common/Makefile.gem5

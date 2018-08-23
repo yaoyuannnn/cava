@@ -1,0 +1,30 @@
+# Common Make targets for simulating MachSuite in gem5.
+#
+# ALADDIN_HOME needs to be defined as an environment variable.
+# The gem5 dependencies are listed as .cpp files for compatibility with gem5.
+# To compile them with C code, we need to explicitly use gcc.
+
+.PHONY: gem5-accel clean-gem5
+
+GEM5_CPU = $(BUILD_DIR)/$(EXE)-gem5
+GEM5_ACCEL = $(BUILD_DIR)/$(EXE)-gem5-accel
+
+# -mno-sse
+GEM5_CFLAGS = -static -O3 -mno-80387 -msoft-float \
+              -march=nocona -msse -mfpmath=sse \
+              -fno-exceptions -fno-inline
+
+gem5-cpu: $(LOCAL_SRCS) $(GEM5_SRCS)
+	@echo Building benchmark $(EXEC) for gem5.
+	@mkdir -p $(BUILD_DIR)
+	@$(COMP) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -o $(GEM5_CPU) $^
+
+gem5-accel: $(LOCAL_SRCS) $(GEM5_SRCS)
+	@echo Building benchmark $(EXEC) for gem5 with HW acceleration.
+	@mkdir -p $(BUILD_DIR)
+	@$(CC) $(GEM5_CFLAGS) $(CFLAGS) -DGEM5_HARNESS -DDMA_MODE -DDMA_INTERFACE_V3 $(INCLUDES) -o $(GEM5_ACCEL) $^
+
+clean-gem5:
+	@rm -rf $(BUILD_DIR)/*-gem5
+	@rm -rf $(BUILD_DIR)/*-gem5-accel
+
