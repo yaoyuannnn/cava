@@ -21,7 +21,7 @@ void demosaic_nn_hw(float *host_input, float *host_result, int row_size,
 
 void transform_hw(float *host_input, float *host_result, int row_size,
                   int col_size, int chan_size, float *acc_input,
-                  float *acc_result, float TsTw_tran[3][3]) {
+                  float *acc_result, float *TsTw_tran) {
   dmaLoad(acc_input, host_input,
           row_size * col_size * chan_size * sizeof(float));
   transform_fxp(acc_input, row_size, col_size, chan_size, acc_result,
@@ -47,9 +47,9 @@ int main() {
   Ts            = get_Ts       (cam_model_path);
   Tw            = get_Tw       (cam_model_path, wb_index);
   TsTw          = get_TsTw     (cam_model_path, wb_index);
-  ctrl_pts      = get_ctrl_pts (cam_model_path, num_ctrl_pts, 1);
-  weights       = get_weights  (cam_model_path, num_ctrl_pts, 1);
-  coefs         = get_coefs    (cam_model_path, num_ctrl_pts, 1);
+  ctrl_pts      = get_ctrl_pts (cam_model_path, num_ctrl_pts);
+  weights       = get_weights  (cam_model_path, num_ctrl_pts);
+  coefs         = get_coefs    (cam_model_path, num_ctrl_pts);
 
   float *host_input, *host_result, *acc_input, *acc_result;
   int err = posix_memalign((void**)&host_input, CACHELINE_SIZE,
@@ -82,7 +82,7 @@ int main() {
                      sizeof(float) * row_size * col_size * chan_size);
   TsTw_tran = transpose_mat(TsTw, 3, 3);
   INVOKE_KERNEL(TRANSFORM, transform_hw, host_input, host_result, row_size,
-                col_size, chan_size, acc_input, acc_result, TsTw_tran);
+                col_size, chan_size, acc_input, acc_result, &TsTw_tran[0][0]);
 
   FILE *output_file = fopen("result.txt", "w");
   for (int i = 0; i < row_size * col_size * chan_size; i++)
