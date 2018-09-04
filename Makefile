@@ -5,6 +5,9 @@
 native:
 	@$(MAKE) -f common/Makefile.common native
 
+debug:
+	@$(MAKE) -f common/Makefile.common debug
+
 dma-trace-binary:
 	@$(MAKE) -f common/Makefile.common dma-trace-binary
 

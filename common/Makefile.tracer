@@ -1,3 +1,5 @@
+include common/Makefile.common
+
 MODULES = kernels utility gem5
 
 .PHONY: dma-trace-binary run-trace clean-trace src-symlinks

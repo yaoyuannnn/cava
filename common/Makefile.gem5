@@ -1,3 +1,5 @@
+include common/Makefile.common
+
 .PHONY: gem5-cpu gem5-accel clean-gem5
 
 GEM5_CPU = $(BUILD_DIR)/$(EXE)-gem5

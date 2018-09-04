@@ -6,7 +6,9 @@ COMMON_DIR := $(CURRENT_DIR)
 CURRENT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 SRCS = main.c \
-	kernels/pipe_stages.c
+	kernels/pipe_stages.c \
+        utility/load_camera_model.c \
+        utility/utility.c
 LOCAL_SRCS = $(patsubst %, $(SRC_DIR)/%, $(SRCS))
 GEM5_DMA_SRC = gem5/dma_interface.c
 GEM5_SYS_SRCS = gem5/aladdin_sys_connection.cpp gem5/aladdin_sys_constants.cpp
@@ -20,14 +22,19 @@ INCLUDES += -I$(ALADDIN_HOME) \
 EXE = camera-pipe
 
 NATIVE = $(BUILD_DIR)/$(EXE)-native
+DEBUG = $(BUILD_DIR)/$(EXE)-debug
 
 native: $(LOCAL_SRCS) $(GEM5_SRCS)
-	@echo Building benchmark $(EXEC) for native machine.
+	@echo Building benchmark for native machine.
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(NATIVE) $^
-clean:
+
+debug: $(LOCAL_SRCS) $(GEM5_SRCS)
+	@echo Building benchmark for native machine with debug support.
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -ggdb3 $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(DEBUG) $^
+
+clean-native:
 	rm -f camera_pipe
 
 export WORKLOAD = demosaic_nn_hw
-include common/Makefile.tracer
-include common/Makefile.gem5
