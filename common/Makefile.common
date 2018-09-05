@@ -1,4 +1,5 @@
 CFLAGS?=-O3 -Wall -Wno-unused-label
+LFLAGS += -lm -lconfuse -lrt
 
 SRC_DIR = src
 BUILD_DIR = build
@@ -6,6 +7,7 @@ COMMON_DIR := $(CURRENT_DIR)
 CURRENT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 SRCS = main.c \
+        camera_pipe.c \
 	kernels/pipe_stages.c \
         utility/load_camera_model.c \
         utility/utility.c
@@ -27,12 +29,12 @@ DEBUG = $(BUILD_DIR)/$(EXE)-debug
 native: $(LOCAL_SRCS) $(GEM5_SRCS)
 	@echo Building benchmark for native machine.
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(NATIVE) $^
+	$(CC) $(CFLAGS) $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(NATIVE) $^ $(LFLAGS)
 
 debug: $(LOCAL_SRCS) $(GEM5_SRCS)
 	@echo Building benchmark for native machine with debug support.
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -ggdb3 $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(DEBUG) $^
+	$(CC) $(CFLAGS) -ggdb3 $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(DEBUG) $^ $(LFLAGS)
 
 clean-native:
 	rm -f camera_pipe

@@ -1,3 +1,6 @@
+#ifndef _PIPE_STAGES_H_
+#define _PIPE_STAGES_H_
+
 #define DEMOSAIC_NN 0x3
 #define TRANSFORM 0x4
 #define CACHELINE_SIZE 64
@@ -7,6 +10,11 @@
   ({ __typeof__ (a) _a = (a); \
       __typeof__ (b) _b = (b); \
     _a > _b ? _a : _b; })
+
+#define min(a,b) \
+  ({ __typeof__ (a) _a = (a); \
+      __typeof__ (b) _b = (b); \
+    _a < _b ? _a : _b; })
 
 // This is to avoid a ton of spurious unused variable warnings when
 // we're not building for gem5.
@@ -45,3 +53,11 @@ void demosaic_nn_fxp(float *input, int row_size, int col_size, int chan_size,
 
 void transform_fxp(float *input, int row_size, int col_size, int chan_size,
                    float *result, float *TsTw_tran);
+
+void gamut_map_fxp(float *input, int row_size, int col_size, int chan_size,
+                    float *result, float *ctrl_pts, float *weights, float *coefs);
+
+void tone_map_approx_fxp(float *input, int row_size, int col_size,
+                         int chan_size, float *result);
+
+#endif

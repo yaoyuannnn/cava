@@ -1,11 +1,9 @@
 #include "load_camera_model.h"
 
 // Get color space transform
-float** get_Ts(char* cam_model_path) {
-  float **Ts;
-  int err = posix_memalign((void **)&Ts, CACHELINE_SIZE, sizeof(float) * 3);
-  for (int i = 0; i < 3; i++)
-    err |= posix_memalign((void **)&(Ts[i]), CACHELINE_SIZE, sizeof(float) * 3);
+float* get_Ts(char* cam_model_path) {
+  float *Ts;
+  int err = posix_memalign((void **)&Ts, CACHELINE_SIZE, sizeof(float) * 9);
   assert(err == 0 && "Failed to allocate memory!");
   char *line;
   char *str;
@@ -35,7 +33,7 @@ float** get_Ts(char* cam_model_path) {
 
     if (line_idx >= 1 && line_idx <= 3) {
       for (int j = 0; j < 3; j++) {
-        Ts[line_idx - 1][j] = line_data[j];
+        Ts[(line_idx - 1) * 3 + j] = line_data[j];
       }
     }
     line_idx = line_idx + 1;
@@ -46,11 +44,9 @@ float** get_Ts(char* cam_model_path) {
 }
 
 // Get white balance transform
-float** get_Tw(char* cam_model_path, int wb_index) {
-  float **Tw;
-  int err = posix_memalign((void **)&Tw, CACHELINE_SIZE, sizeof(float) * 3);
-  for (int i = 0; i < 3; i++)
-    err |= posix_memalign((void **)&(Tw[i]), CACHELINE_SIZE, sizeof(float) * 3);
+float* get_Tw(char* cam_model_path, int wb_index) {
+  float *Tw;
+  int err = posix_memalign((void **)&Tw, CACHELINE_SIZE, sizeof(float) * 9);
   assert(err == 0 && "Failed to allocate memory!");
   char *line;
   char *str;
@@ -88,8 +84,11 @@ float** get_Tw(char* cam_model_path, int wb_index) {
       // Convert the white balance vector into a diagaonal matrix
       for (int i=0; i<3; i++) {
         for (int j=0; j<3; j++) {
-          if (i==j) { Tw[i][j] = line_data[i]; }
-          else      { Tw[i][j] = 0.0;         }
+          if (i == j) {
+            Tw[i * 3 + j] = line_data[i];
+          } else {
+            Tw[i * 3 + j] = 0.0;
+          }
         }
       }
     }
@@ -102,12 +101,9 @@ float** get_Tw(char* cam_model_path, int wb_index) {
 
 
 // Get combined transforms for checking
-float** get_TsTw(char* cam_model_path, int wb_index) {
-  float **TsTw;
-  int err = posix_memalign((void **)&TsTw, CACHELINE_SIZE, sizeof(float) * 3);
-  for (int i = 0; i < 3; i++)
-    err |=
-        posix_memalign((void **)&(TsTw[i]), CACHELINE_SIZE, sizeof(float) * 3);
+float* get_TsTw(char* cam_model_path, int wb_index) {
+  float *TsTw;
+  int err = posix_memalign((void **)&TsTw, CACHELINE_SIZE, sizeof(float) * 9);
   assert(err == 0 && "Failed to allocate memory!");
   char *line;
   char *str;
@@ -142,7 +138,7 @@ float** get_TsTw(char* cam_model_path, int wb_index) {
 
     if (line_idx >= wb_base && line_idx <= (wb_base + 2)) {
       for (int j = 0; j < 3; j++) {
-        TsTw[line_idx - wb_base][j] = line_data[j];
+        TsTw[(line_idx - wb_base) * 3 + j] = line_data[j];
       }
     }
     line_idx = line_idx + 1;
@@ -153,12 +149,10 @@ float** get_TsTw(char* cam_model_path, int wb_index) {
 }
 
 // Get control points
-float** get_ctrl_pts(char* cam_model_path, int num_cntrl_pts) {
-  float **ctrl_pnts;
-  int err = posix_memalign((void **)&ctrl_pnts, CACHELINE_SIZE, sizeof(float) * num_cntrl_pts);
-  for (int i = 0; i < num_cntrl_pts; i++)
-    err |=
-        posix_memalign((void **)&(ctrl_pnts[i]), CACHELINE_SIZE, sizeof(float) * 3);
+float* get_ctrl_pts(char* cam_model_path, int num_cntrl_pts) {
+  float *ctrl_pnts;
+  int err = posix_memalign((void **)&ctrl_pnts, CACHELINE_SIZE,
+                           sizeof(float) * num_cntrl_pts * 3);
   assert(err == 0 && "Failed to allocate memory!");
   char *line;
   char *str;
@@ -189,7 +183,7 @@ float** get_ctrl_pts(char* cam_model_path, int num_cntrl_pts) {
 
     if (line_idx >= 1 && line_idx <= num_cntrl_pts) {
       for (int j = 0; j < 3; j++) {
-        ctrl_pnts[line_idx-1][j] = line_data[j];
+        ctrl_pnts[(line_idx - 1) * 3 + j] = line_data[j];
       }
     }
     line_idx = line_idx + 1;
@@ -200,12 +194,10 @@ float** get_ctrl_pts(char* cam_model_path, int num_cntrl_pts) {
 }
 
 // Get weights
-float** get_weights(char* cam_model_path, int num_cntrl_pts) {
-  float **weights;
-  int err = posix_memalign((void **)&weights, CACHELINE_SIZE, sizeof(float) * num_cntrl_pts);
-  for (int i = 0; i < num_cntrl_pts; i++)
-    err |=
-        posix_memalign((void **)&(weights[i]), CACHELINE_SIZE, sizeof(float) * 3);
+float* get_weights(char* cam_model_path, int num_cntrl_pts) {
+  float *weights;
+  int err = posix_memalign((void **)&weights, CACHELINE_SIZE,
+                           sizeof(float) * num_cntrl_pts * 3);
   assert(err == 0 && "Failed to allocate memory!");
   char *line;
   char *str;
@@ -236,7 +228,7 @@ float** get_weights(char* cam_model_path, int num_cntrl_pts) {
 
     if (line_idx >= 1 && line_idx <= num_cntrl_pts) {
       for (int j = 0; j < 3; j++) {
-        weights[line_idx-1][j] = line_data[j];
+        weights[(line_idx - 1) * 3 + j] = line_data[j];
       }
     }
     line_idx = line_idx + 1;
@@ -247,12 +239,9 @@ float** get_weights(char* cam_model_path, int num_cntrl_pts) {
 }
 
 // Get coeficients
-float** get_coefs(char* cam_model_path, int num_cntrl_pts) {
-  float **coefs;
-  int err = posix_memalign((void **)&coefs, CACHELINE_SIZE, sizeof(float) * num_cntrl_pts);
-  for (int i = 0; i < num_cntrl_pts; i++)
-    err |=
-        posix_memalign((void **)&(coefs[i]), CACHELINE_SIZE, sizeof(float) * 3);
+float* get_coefs(char* cam_model_path, int num_cntrl_pts) {
+  float *coefs;
+  int err = posix_memalign((void **)&coefs, CACHELINE_SIZE, sizeof(float) * num_cntrl_pts * 3);
   assert(err == 0 && "Failed to allocate memory!");
   char *line;
   char *str;
@@ -283,7 +272,7 @@ float** get_coefs(char* cam_model_path, int num_cntrl_pts) {
 
     if (line_idx >= (num_cntrl_pts + 1) && line_idx <= (num_cntrl_pts + 4)) {
       for (int j = 0; j < 3; j++) {
-        coefs[line_idx-1][j] = line_data[j];
+        coefs[(line_idx - num_cntrl_pts - 1) * 3 + j] = line_data[j];
       }
     }
     line_idx = line_idx + 1;
