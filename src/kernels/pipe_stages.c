@@ -1,6 +1,5 @@
 #include <math.h>
 #include "pipe_stages.h"
-#include "config.h"
 
 // Nearest neighbor demosaicing
 // G R

@@ -241,7 +241,7 @@ float* get_weights(char* cam_model_path, int num_cntrl_pts) {
 // Get coeficients
 float* get_coefs(char* cam_model_path, int num_cntrl_pts) {
   float *coefs;
-  int err = posix_memalign((void **)&coefs, CACHELINE_SIZE, sizeof(float) * num_cntrl_pts * 3);
+  int err = posix_memalign((void **)&coefs, CACHELINE_SIZE, sizeof(float) * 9);
   assert(err == 0 && "Failed to allocate memory!");
   char *line;
   char *str;

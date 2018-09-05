@@ -1,10 +1,9 @@
 #ifndef _PIPE_STAGES_H_
 #define _PIPE_STAGES_H_
 
-#define DEMOSAIC_NN 0x3
+#define ISP 0x3
 #define TRANSFORM 0x4
 #define CACHELINE_SIZE 64
-
 
 #define max(a,b) \
   ({ __typeof__ (a) _a = (a); \
@@ -47,6 +46,8 @@
 #define ARRAY_3D(TYPE, output_array_name, input_array_name, DIM_1, DIM_2)      \
     TYPE(*output_array_name)[DIM_1][DIM_2] =                                   \
         (TYPE(*)[DIM_1][DIM_2])input_array_name
+
+extern int num_ctrl_pts;
 
 void demosaic_nn_fxp(float *input, int row_size, int col_size, int chan_size,
                      float *result);
