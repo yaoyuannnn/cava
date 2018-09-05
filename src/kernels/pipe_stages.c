@@ -10,11 +10,11 @@ void demosaic_nn_fxp(float *input, int row_size, int col_size, int chan_size,
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
 
-  dm_nn_row:
+  dm_nn_chan:
   for (int chan = 0; chan < chan_size; chan++)
-    dm_nn_col:
+    dm_nn_row:
     for (int row = 0; row < row_size; row++)
-      dm_nn_chan:
+      dm_nn_col:
       for (int col = 0; col < col_size; col++)
         if (row % 2 == 0 && col % 2 == 0) {
           if (chan == 0) {
@@ -58,8 +58,11 @@ void denoise_fxp(float *input, int row_size, int col_size, int chan_size,
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
 
+  dn_chan:
   for (int chan = 0; chan < chan_size; chan++)
+    dm_row:
     for (int row = 0; row < row_size; row++)
+      dm_col:
       for (int col = 0; col < col_size; col++)
         _result[chan][row][col] =
             max(max(_input[chan][row][col - 2], _input[chan][row][col + 2]),
@@ -73,11 +76,11 @@ void transform_fxp(float *input, int row_size, int col_size, int chan_size,
   ARRAY_3D(float, _result, result, row_size, col_size);
   ARRAY_2D(float, _TsTw_tran, TsTw_tran, 3);
 
-  tr_row:
+  tr_chan:
   for (int chan = 0; chan < chan_size; chan++)
-    tr_col:
+    tr_row:
     for (int row = 0; row < row_size; row++)
-      tr_chan:
+      tr_col:
       for (int col = 0; col < col_size; col++)
         if (chan == 0) {
           _result[chan][row][col] =
@@ -112,8 +115,11 @@ void gamut_map_fxp(float *input, int row_size, int col_size, int chan_size,
   float dist[row_size][col_size];
 
   // Subtract the vectors
+  gm_sub_chan:
   for (int chan = 0; chan < chan_size; chan++)
+    gm_sub_row:
     for (int row = 0; row < row_size; row++)
+      gm_sub_col:
       for (int col = 0; col < col_size; col++)
         if (col < num_ctrl_pts)
           _result[chan][row][col] = _input[chan][row][col] - _ctrl_pts[col][chan];
@@ -121,14 +127,19 @@ void gamut_map_fxp(float *input, int row_size, int col_size, int chan_size,
           _result[chan][row][col] = 0;
 
   // Take the L2 norm to get the distance
+  gm_l2_row:
   for (int row = 0; row < row_size; row++)
+    gm_l2_col:
     for (int col = 0; col < col_size; col++)
       dist[row][col] = sqrt(_result[0][row][col] * _result[0][row][col] +
                        _result[1][row][col] * _result[1][row][col] +
                        _result[2][row][col] * _result[2][row][col]);
 
+  gm_main_chan:
   for (int chan = 0; chan < chan_size; chan++)
+    gm_main_row:
     for (int row = 0; row < row_size; row++)
+      gm_main_col:
       for (int col = 0; col < col_size; col++) {
         // Update persistant loop variables
         if (col < num_ctrl_pts)
@@ -149,8 +160,11 @@ void tone_map_approx_fxp(float *input, int row_size, int col_size,
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
 
+  tm_chan:
   for (int chan = 0; chan < chan_size; chan++)
+    tm_row:
     for (int row = 0; row < row_size; row++)
+      tm_col:
       for (int col = 0; col < col_size; col++) {
         float v;
         if (_input[chan][row][col] < 32)
