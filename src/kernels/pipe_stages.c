@@ -51,6 +51,21 @@ void demosaic_nn_fxp(float *input, int row_size, int col_size, int chan_size,
         }
 }
 
+// Simple denoise
+void denoise_fxp(float *input, int row_size, int col_size, int chan_size,
+                 float *result) {
+
+  ARRAY_3D(float, _input, input, row_size, col_size);
+  ARRAY_3D(float, _result, result, row_size, col_size);
+
+  for (int chan = 0; chan < chan_size; chan++)
+    for (int row = 0; row < row_size; row++)
+      for (int col = 0; col < col_size; col++)
+        _result[chan][row][col] =
+            max(max(_input[chan][row][col - 2], _input[chan][row][col + 2]),
+                max(_input[chan][row - 2][col], _input[chan][row + 2][col]));
+}
+
 // Color map and white balance transform
 void transform_fxp(float *input, int row_size, int col_size, int chan_size,
                     float *result, float *TsTw_tran) {

@@ -51,6 +51,9 @@
 void demosaic_nn_fxp(float *input, int row_size, int col_size, int chan_size,
                      float *result);
 
+void denoise_fxp(float *input, int row_size, int col_size, int chan_size,
+                 float *result);
+
 void transform_fxp(float *input, int row_size, int col_size, int chan_size,
                    float *result, float *TsTw_tran);
 
