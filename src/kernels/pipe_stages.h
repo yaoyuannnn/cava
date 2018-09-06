@@ -49,19 +49,17 @@
 
 extern int num_ctrl_pts;
 
-void demosaic_nn_fxp(float *input, int row_size, int col_size, int chan_size,
-                     float *result);
+void demosaic_nn_fxp(float *input, int row_size, int col_size, float *result);
 
-void denoise_fxp(float *input, int row_size, int col_size, int chan_size,
-                 float *result);
+void denoise_fxp(float *input, int row_size, int col_size, float *result);
 
-void transform_fxp(float *input, int row_size, int col_size, int chan_size,
-                   float *result, float *TsTw_tran);
+void transform_fxp(float *input, int row_size, int col_size, float *result,
+                   float *TsTw_tran);
 
-void gamut_map_fxp(float *input, int row_size, int col_size, int chan_size,
-                    float *result, float *ctrl_pts, float *weights, float *coefs);
+void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
+                   float *ctrl_pts, float *weights, float *coefs);
 
 void tone_map_approx_fxp(float *input, int row_size, int col_size,
-                         int chan_size, float *result);
+                         float *result);
 
 #endif
