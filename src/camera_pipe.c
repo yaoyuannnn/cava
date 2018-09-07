@@ -87,14 +87,13 @@ void camera_pipe(float *host_input, float *host_result, int row_size,
                            sizeof(float) * row_size * col_size * CHAN_SIZE);
   err |= posix_memalign((void **)&acc_result, CACHELINE_SIZE,
                         sizeof(float) * row_size * col_size * CHAN_SIZE);
-  err |= posix_memalign((void **)&acc_TsTw, CACHELINE_SIZE,
-                        sizeof(float) * 9);
+  err |= posix_memalign((void **)&acc_TsTw, CACHELINE_SIZE, sizeof(float) * 9);
   err |= posix_memalign((void **)&acc_ctrl_pts, CACHELINE_SIZE,
                         sizeof(float) * num_ctrl_pts * CHAN_SIZE);
   err |= posix_memalign((void **)&acc_weights, CACHELINE_SIZE,
                         sizeof(float) * num_ctrl_pts * CHAN_SIZE);
-  err |= posix_memalign((void **)&acc_coefs, CACHELINE_SIZE,
-                        sizeof(float) * 12);
+  err |=
+      posix_memalign((void **)&acc_coefs, CACHELINE_SIZE, sizeof(float) * 12);
   assert(err == 0 && "Failed to allocate memory!");
 
   // Load camera model parameters for the ISP

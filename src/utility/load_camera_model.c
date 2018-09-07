@@ -1,3 +1,8 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include "params.h"
 #include "load_camera_model.h"
 
 // Get color space transform

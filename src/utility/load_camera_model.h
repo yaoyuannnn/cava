@@ -1,12 +1,6 @@
 #ifndef _LOAD_CAMERA_MODEL_H_
 #define _LOAD_CAMERA_MODEL_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include "kernels/pipe_stages.h"
-
 // Get color space transform
 float* get_Ts(char* cam_model_path);
 

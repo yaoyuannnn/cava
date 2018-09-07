@@ -3,7 +3,6 @@
 
 #define ISP 0x3
 #define TRANSFORM 0x4
-#define CACHELINE_SIZE 64
 
 #define max(a,b) \
   ({ __typeof__ (a) _a = (a); \
