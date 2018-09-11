@@ -1,53 +1,107 @@
+#include <stdio.h>
 #include <math.h>
 #include "pipe_stages.h"
-#include "params.h"
 
-// Nearest neighbor demosaicing
+void scale_fxp(uint8_t *input, int row_size, int col_size, float *output) {
+  ARRAY_3D(uint8_t, _input, input, row_size, col_size);
+  ARRAY_3D(float, _output, output, row_size, col_size);
+  sl_chan:
+  for (int chan = 0; chan < CHAN_SIZE; chan++)
+    sl_row:
+    for (int row = 0; row < row_size; row++)
+      sl_col:
+      for (int col = 0; col < col_size; col++)
+        _output[chan][row][col] = _input[chan][row][col] * 1.0 / 255;
+}
+
+void descale_fxp(float *input, int row_size, int col_size, uint8_t *output) {
+  ARRAY_3D(float, _input, input, row_size, col_size);
+  ARRAY_3D(uint8_t, _output, output, row_size, col_size);
+  dsl_chan:
+  for (int chan = 0; chan < CHAN_SIZE; chan++)
+    dsl_row:
+    for (int row = 0; row < row_size; row++)
+      dsl_col:
+      for (int col = 0; col < col_size; col++)
+        _output[chan][row][col] = min(max(_input[chan][row][col] * 255, 0), 255);
+}
+
+// Demosaicing stage
 // G R
 // B G
-void demosaic_nn_fxp(float *input, int row_size, int col_size, float *result) {
+void demosaic_fxp(float *input, int row_size, int col_size, float *result) {
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
 
-  dm_nn_chan:
-  for (int chan = 0; chan < CHAN_SIZE; chan++)
-    dm_nn_row:
-    for (int row = 0; row < row_size; row++)
-      dm_nn_col:
-      for (int col = 0; col < col_size; col++)
-        if (row % 2 == 0 && col % 2 == 0) {
-          if (chan == 0) {
-            _result[chan][row][col] = _input[chan+1][row][col];
-          } else if (chan == 1) {
-            _result[chan][row][col] = _input[chan][row][col] * 2;
-          } else {
-            _result[chan][row][col] = _input[chan][row+1][col];
-          }
-        } else if (row % 2 == 0 && col % 2 == 1) {
-          if (chan == 0) {
-            _result[chan][row][col] = _input[chan][row][col];
-          } else if (chan == 1) {
-            _result[chan][row][col] = _input[chan][row][col-1] * 2;
-          } else {
-            _result[chan][row][col] = _input[chan][row+1][col-1];
-          }
-        } else if (row % 2 == 1 && col % 2 == 0) {
-          if (chan == 0) {
-            _result[chan][row][col] = _input[chan][row-1][col+1];
-          } else if (chan == 1) {
-            _result[chan][row][col] = _input[chan][row][col-1] * 2;
-          } else {
-            _result[chan][row][col] = _input[chan][row][col];
-          }
-        } else {
-          if (chan == 0) {
-            _result[chan][row][col] = _input[chan][row-1][col];
-          } else if (chan == 1) {
-            _result[chan][row][col] = _input[chan][row][col] * 2;
-          } else {
-            _result[chan][row][col] = _input[chan][row][col-1];
-          }
-        }
+  dm_nn_row:
+  for (int row = 1; row < row_size; row++)
+    dm_nn_col:
+    for (int col = 1; col < col_size; col++)
+      if (row % 2 == 0 && col % 2 == 0) {
+        // Green pixel
+        // Getting the R values
+        float R1 = _input[0][row][col - 1];
+        float R2 = _input[0][row][col + 1];
+        // Getting the B values
+        float B1 = _input[2][row - 1][col];
+        float B2 = _input[2][row + 1][col];
+        // R
+        _result[0][row][col] = (R1 + R2) / 2;
+        // G
+        _result[1][row][col] = _input[1][row][col] * 2;
+        // B
+        _result[2][row][col] = (B1 + B2) / 2;
+      } else if (row % 2 == 0 && col % 2 == 1) {
+        // Red pixel
+        // Getting the G values
+        float G1 = _input[1][row - 1][col];
+        float G2 = _input[1][row + 1][col];
+        float G3 = _input[1][row][col - 1];
+        float G4 = _input[1][row][col + 1];
+        // Getting the B values
+        float B1 = _input[2][row - 1][col - 1];
+        float B2 = _input[2][row - 1][col + 1];
+        float B3 = _input[2][row + 1][col - 1];
+        float B4 = _input[2][row + 1][col + 1];
+        // R
+        _result[0][row][col] = _input[0][row][col];
+        // G
+        _result[1][row][col] = (G1 + G2 + G3 + G4) / 2;
+        // B (center pixel)
+        _result[2][row][col] = (B1 + B2 + B3 + B4) / 4;
+      } else if (row % 2 == 1 && col % 2 == 0) {
+        // Blue pixel
+        // Getting the R values
+        float R1 = _input[0][row - 1][col - 1];
+        float R2 = _input[0][row + 1][col - 1];
+        float R3 = _input[0][row - 1][col + 1];
+        float R4 = _input[0][row + 1][col + 1];
+        // Getting the G values
+        float G1 = _input[1][row - 1][col];
+        float G2 = _input[1][row + 1][col];
+        float G3 = _input[1][row][col - 1];
+        float G4 = _input[1][row][col + 1];
+        // R
+        _result[0][row][col] = (R1 + R2 + R3 + R4) / 4;
+        // G
+        _result[1][row][col] = (G1 + G2 + G3 + G4) / 2;
+        // B
+        _result[2][row][col] = _input[2][row][col];
+      } else {
+        // Bottom Green pixel
+        // Getting the R values
+        float R1 = _input[0][row - 1][col];
+        float R2 = _input[0][row + 1][col];
+        // Getting the B values
+        float B1 = _input[2][row][col - 1];
+        float B2 = _input[2][row][col + 1];
+        // R
+        _result[0][row][col] = (R1 + R2) / 2;
+        // G
+        _result[1][row][col] = _input[1][row][col] * 2;
+        // B
+        _result[2][row][col] = (B1 + B2) / 2;
+      }
 }
 
 // Simple denoise

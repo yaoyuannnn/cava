@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "utility.h"
-#include "params.h"
+#include "kernels/pipe_stages.h"
 
-float *read_image_from_binary(char *file_path, int *row_size, int *col_size) {
-  float *image;
+uint8_t *read_image_from_binary(char *file_path, int *row_size, int *col_size) {
+  uint8_t *image;
   FILE *fp = fopen(file_path, "r");
   int chan_size;
   if (fread(row_size, sizeof(int), 1, fp) != 1)
@@ -18,32 +18,29 @@ float *read_image_from_binary(char *file_path, int *row_size, int *col_size) {
                                    "doesn't equal to the default value!\n");
 
   int size = *row_size * *col_size * CHAN_SIZE;
-  int err =
-      posix_memalign((void **)&image, CACHELINE_SIZE, sizeof(float) * size);
-  assert(err == 0 && "Failed to allocate memory!");
-  unsigned char pixel;
-  int i = 0;
-  while (fread(&pixel, sizeof(unsigned char), 1, fp) == 1) {
-    image[i++] = pixel;
-  }
+  image = malloc_aligned(sizeof(uint8_t) * size);
+  if (fread(image, sizeof(uint8_t), size, fp) != size)
+    assert("Failed to read the image from binary file!");
   fclose(fp);
   return image;
 }
 
-void write_image_to_binary(char *file_path, float *image, int row_size, int col_size) {
+void write_image_to_binary(char *file_path, uint8_t *image, int row_size, int col_size) {
   FILE *fp = fopen(file_path, "w");
 
-  int shape[3] = {row_size, col_size, CHAN_SIZE};
-  fwrite(shape, sizeof(int), 3, fp); 
+  int shape[3] = { row_size, col_size, CHAN_SIZE };
+  fwrite(shape, sizeof(int), 3, fp);
 
-  int i = 0;
   int size = row_size * col_size * CHAN_SIZE;
-  unsigned char pixel = image[0];
-  while (i < size) {
-    pixel = image[i++];
-    fwrite(&pixel, sizeof(unsigned char), 1, fp); 
-  }
+  fwrite(image, sizeof(uint8_t), size, fp);
   fclose(fp);
+}
+
+void *malloc_aligned(size_t size) {
+  void *ptr = NULL;
+  int err = posix_memalign((void **)&ptr, CACHELINE_SIZE, size);
+  assert(err == 0 && "Failed to allocate memory!");
+  return ptr;
 }
 
 float *transpose_mat(float *inmat, int width, int height) {
@@ -60,4 +57,32 @@ float *transpose_mat(float *inmat, int width, int height) {
     }
   }
   return outmat;
+}
+
+void convert_hwc_to_chw(uint8_t *input, int row_size, int col_size,
+                        uint8_t **result) {
+  if (*result == NULL) {
+    *result = (uint8_t *)malloc_aligned(row_size * col_size * CHAN_SIZE *
+                                        sizeof(uint8_t));
+  }
+  ARRAY_3D(uint8_t, _input, input, col_size, CHAN_SIZE);
+  ARRAY_3D(uint8_t, _result, *result, row_size, col_size);
+  for (int h = 0; h < row_size; h++)
+    for (int w = 0; w < col_size; w++)
+      for (int c = 0; c < CHAN_SIZE; c++)
+        _result[c][h][w] = _input[h][w][c];
+}
+
+void convert_chw_to_hwc(uint8_t *input, int row_size, int col_size,
+                        uint8_t **result) {
+  if (*result == NULL) {
+    *result = (uint8_t *)malloc_aligned(row_size * col_size * CHAN_SIZE *
+                                      sizeof(uint8_t));
+  }
+  ARRAY_3D(uint8_t, _input, input, row_size, col_size);
+  ARRAY_3D(uint8_t, _result, *result, col_size, CHAN_SIZE);
+  for (int c = 0; c < CHAN_SIZE; c++)
+    for (int h = 0; h < row_size; h++)
+      for (int w = 0; w < col_size; w++)
+        _result[h][w][c] = _input[c][h][w];
 }

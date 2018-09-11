@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "params.h"
+#include "kernels/pipe_stages.h"
 #include "load_camera_model.h"
 
 // Get color space transform

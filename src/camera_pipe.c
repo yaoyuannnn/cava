@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "params.h"
 #include "kernels/pipe_stages.h"
 #include "utility/load_camera_model.h"
 #include "utility/utility.h"
@@ -28,52 +27,38 @@ void load_camera_params_hw(float *host_TsTw, float *host_ctrl_pts,
                            float *host_weights, float *host_coefs,
                            float *acc_TsTw, float *acc_ctrl_pts,
                            float *acc_weights, float *acc_coefs) {
-  dmaLoad(acc_TsTw, host_TsTw, CHAN_SIZE * CHAN_SIZE * sizeof(float));
+  dmaLoad(acc_TsTw, host_TsTw, 9 * sizeof(float));
   dmaLoad(acc_ctrl_pts, host_ctrl_pts,
           num_ctrl_pts * CHAN_SIZE * sizeof(float));
   dmaLoad(acc_weights, host_weights, num_ctrl_pts * CHAN_SIZE * sizeof(float));
-  dmaLoad(acc_coefs, host_coefs, CHAN_SIZE * CHAN_SIZE * sizeof(float));
+  dmaLoad(acc_coefs, host_coefs, 12 * sizeof(float));
 }
 
-void isp_hw(float *host_input, float *host_result, int row_size, int col_size,
-            float *acc_input, float *acc_result, float *acc_TsTw,
+void isp_hw(uint8_t *host_input, uint8_t *host_result, int row_size,
+            int col_size, uint8_t *acc_input, uint8_t *acc_result,
+            float *acc_input_scaled, float *acc_result_scaled, float *acc_TsTw,
             float *acc_ctrl_pts, float *acc_weights, float *acc_coefs) {
   dmaLoad(acc_input, host_input,
-          row_size * col_size * CHAN_SIZE * sizeof(float));
-  demosaic_nn_fxp(acc_input, row_size, col_size, acc_result);
-  denoise_fxp(acc_input, row_size, col_size, acc_result);
-  transform_fxp(acc_input, row_size, col_size, acc_result, acc_TsTw);
-  gamut_map_fxp(acc_input, row_size, col_size, acc_result, acc_ctrl_pts,
-                acc_weights, acc_coefs);
-  tone_map_approx_fxp(acc_input, row_size, col_size, acc_result);
+          row_size * col_size * CHAN_SIZE * sizeof(uint8_t));
+  scale_fxp(acc_input, row_size, col_size, acc_input_scaled);
+  demosaic_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled);
+  denoise_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled);
+  transform_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled,
+                acc_TsTw);
+  gamut_map_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled,
+                acc_ctrl_pts, acc_weights, acc_coefs);
+  tone_map_approx_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled);
+  descale_fxp(acc_result_scaled, row_size, col_size, acc_result);
   dmaStore(host_result, acc_result,
-           row_size * col_size * CHAN_SIZE * sizeof(float));
+           row_size * col_size * CHAN_SIZE * sizeof(uint8_t));
 }
 
-// void demosaic_nn_hw(float *host_input, float *host_result, int row_size,
-//                    int col_size, float *acc_input, float *acc_result) {
-//  dmaLoad(acc_input, host_input, row_size * col_size * CHAN_SIZE *
-// sizeof(float));
-//  demosaic_nn_fxp(acc_input, row_size, col_size, acc_result);
-//  dmaStore(host_result, acc_result, row_size * col_size * CHAN_SIZE *
-// sizeof(float));
-//}
-//
-// void transform_hw(float *host_input, float *host_result, int row_size,
-//                  int col_size, float *acc_input, float *acc_result,
-//                  float *TsTw) {
-//  dmaLoad(acc_input, host_input, row_size * col_size * CHAN_SIZE *
-// sizeof(float));
-//  transform_fxp(acc_input, row_size, col_size, acc_result, TsTw);
-//  dmaStore(host_result, acc_result, row_size * col_size * CHAN_SIZE *
-// sizeof(float));
-//}
-
-void camera_pipe(float *host_input, float *host_result, int row_size,
+void camera_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
                  int col_size) {
+  uint8_t *acc_input, *acc_result;
+  float *acc_input_scaled, *acc_result_scaled;
   float *host_TsTw, *host_ctrl_pts, *host_weights, *host_coefs;
   float *acc_TsTw, *acc_ctrl_pts, *acc_weights, *acc_coefs;
-  float *acc_input, *acc_result;
 
   host_TsTw = get_TsTw(cam_model_path, wb_index);
   float *trans = transpose_mat(host_TsTw, CHAN_SIZE, CHAN_SIZE);
@@ -83,18 +68,14 @@ void camera_pipe(float *host_input, float *host_result, int row_size,
   host_weights = get_weights(cam_model_path, num_ctrl_pts);
   host_coefs = get_coefs(cam_model_path, num_ctrl_pts);
 
-  int err = posix_memalign((void **)&acc_input, CACHELINE_SIZE,
-                           sizeof(float) * row_size * col_size * CHAN_SIZE);
-  err |= posix_memalign((void **)&acc_result, CACHELINE_SIZE,
-                        sizeof(float) * row_size * col_size * CHAN_SIZE);
-  err |= posix_memalign((void **)&acc_TsTw, CACHELINE_SIZE, sizeof(float) * 9);
-  err |= posix_memalign((void **)&acc_ctrl_pts, CACHELINE_SIZE,
-                        sizeof(float) * num_ctrl_pts * CHAN_SIZE);
-  err |= posix_memalign((void **)&acc_weights, CACHELINE_SIZE,
-                        sizeof(float) * num_ctrl_pts * CHAN_SIZE);
-  err |=
-      posix_memalign((void **)&acc_coefs, CACHELINE_SIZE, sizeof(float) * 12);
-  assert(err == 0 && "Failed to allocate memory!");
+  acc_input = malloc_aligned(sizeof(uint8_t) * row_size * col_size * CHAN_SIZE);
+  acc_result = malloc_aligned(sizeof(uint8_t) * row_size * col_size * CHAN_SIZE);
+  acc_input_scaled = malloc_aligned(sizeof(float) * row_size * col_size * CHAN_SIZE);
+  acc_result_scaled = malloc_aligned(sizeof(float) * row_size * col_size * CHAN_SIZE);
+  acc_TsTw = malloc_aligned(sizeof(float) * 9);
+  acc_ctrl_pts = malloc_aligned(sizeof(float) * num_ctrl_pts * CHAN_SIZE);
+  acc_weights = malloc_aligned(sizeof(float) * num_ctrl_pts * CHAN_SIZE);
+  acc_coefs = malloc_aligned(sizeof(float) * 12);
 
   // Load camera model parameters for the ISP
   MAP_ARRAY_TO_ACCEL(ISP, "host_TsTw", host_TsTw,
@@ -111,12 +92,12 @@ void camera_pipe(float *host_input, float *host_result, int row_size,
 
   // Invoke the ISP
   MAP_ARRAY_TO_ACCEL(ISP, "host_input", host_input,
-                     sizeof(float) * row_size * col_size * CHAN_SIZE);
+                     sizeof(uint8_t) * row_size * col_size * CHAN_SIZE);
   MAP_ARRAY_TO_ACCEL(ISP, "host_result", host_result,
-                     sizeof(float) * row_size * col_size * CHAN_SIZE);
+                     sizeof(uint8_t) * row_size * col_size * CHAN_SIZE);
   INVOKE_KERNEL(ISP, isp_hw, host_input, host_result, row_size, col_size,
-                acc_input, acc_result, acc_TsTw, acc_ctrl_pts, acc_weights,
-                acc_coefs);
+                acc_input, acc_result, acc_input_scaled, acc_result_scaled,
+                acc_TsTw, acc_ctrl_pts, acc_weights, acc_coefs);
 
   free(acc_input);
   free(acc_result);

@@ -1,6 +1,14 @@
 #ifndef _PIPE_STAGES_H_
 #define _PIPE_STAGES_H_
 
+typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned int uint32_t;
+typedef unsigned long uint64_t;
+
+#define CACHELINE_SIZE 64
+#define CHAN_SIZE 3
+
 #define ISP 0x3
 #define TRANSFORM 0x4
 
@@ -48,7 +56,11 @@
 
 extern int num_ctrl_pts;
 
-void demosaic_nn_fxp(float *input, int row_size, int col_size, float *result);
+void scale_fxp(uint8_t *input, int row_size, int col_size, float *result);
+
+void descale_fxp(float *input, int row_size, int col_size, uint8_t *result);
+
+void demosaic_fxp(float *input, int row_size, int col_size, float *result);
 
 void denoise_fxp(float *input, int row_size, int col_size, float *result);
 
