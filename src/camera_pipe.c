@@ -45,10 +45,10 @@ void isp_hw(uint8_t *host_input, uint8_t *host_result, int row_size,
   denoise_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled);
   transform_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled,
                 acc_TsTw);
-  gamut_map_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled,
-                acc_ctrl_pts, acc_weights, acc_coefs);
-  tone_map_approx_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled);
-  descale_fxp(acc_result_scaled, row_size, col_size, acc_result);
+  //gamut_map_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled,
+  //              acc_ctrl_pts, acc_weights, acc_coefs);
+  tone_map_approx_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled);
+  descale_fxp(acc_input_scaled, row_size, col_size, acc_result);
   dmaStore(host_result, acc_result,
            row_size * col_size * CHAN_SIZE * sizeof(uint8_t));
 }
@@ -101,6 +101,8 @@ void camera_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
 
   free(acc_input);
   free(acc_result);
+  free(acc_input_scaled);
+  free(acc_result_scaled);
   free(host_TsTw);
   free(host_ctrl_pts);
   free(host_weights);
