@@ -156,7 +156,7 @@ void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
   ARRAY_2D(float, _weights, weights, 3);
   ARRAY_2D(float, _coefs, coefs, 3);
 
-  float dist[row_size][col_size];
+  float dist[row_size][col_size][chan];
 
   // Subtract the vectors
   gm_sub_chan:
@@ -165,19 +165,20 @@ void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
     for (int row = 0; row < row_size; row++)
       gm_sub_col:
       for (int col = 0; col < col_size; col++)
-        if (col < num_ctrl_pts)
-          _result[chan][row][col] = _input[chan][row][col] - _ctrl_pts[col][chan];
-        else
-          _result[chan][row][col] = 0;
+        _result[chan][row][col] = _input[chan][row][col] - ctrl_point_sum[chan];
 
   // Take the L2 norm to get the distance
   gm_l2_row:
-  for (int row = 0; row < row_size; row++)
+  for (int row = 0; row < row_size; row++) {
     gm_l2_col:
-    for (int col = 0; col < col_size; col++)
+    for (int col = 0; col < col_size; col++) {
       dist[row][col] = sqrt(_result[0][row][col] * _result[0][row][col] +
                        _result[1][row][col] * _result[1][row][col] +
                        _result[2][row][col] * _result[2][row][col]);
+      //printf("%f ", dist[row][col]);
+    }
+    //printf("\n");
+  }
 
   gm_main_chan:
   for (int chan = 0; chan < CHAN_SIZE; chan++)
@@ -186,9 +187,10 @@ void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
       gm_main_col:
       for (int col = 0; col < col_size; col++) {
         // Update persistant loop variables
-        if (col < num_ctrl_pts)
-          _result[chan][row][col] =
-              _input[chan][row][col] + _weights[col][chan] * dist[row][col];
+        _result[chan][row][col] = 0.0;
+        gm_main_cp:
+        for (int cp = 0; cp < num_ctrl_pts; cp++)
+          _result[chan][row][col] += _weights[cp][chan] * dist[row][col];
 
         // Add on the biases for the RBF
         _result[chan][row][col] += _coefs[0][chan] +

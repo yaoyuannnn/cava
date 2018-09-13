@@ -41,14 +41,14 @@ void isp_hw(uint8_t *host_input, uint8_t *host_result, int row_size,
   dmaLoad(acc_input, host_input,
           row_size * col_size * CHAN_SIZE * sizeof(uint8_t));
   scale_fxp(acc_input, row_size, col_size, acc_input_scaled);
-  demosaic_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled);
-  denoise_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled);
-  transform_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled,
-                acc_TsTw);
-  //gamut_map_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled,
-  //              acc_ctrl_pts, acc_weights, acc_coefs);
-  tone_map_approx_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled);
-  descale_fxp(acc_input_scaled, row_size, col_size, acc_result);
+  //demosaic_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled);
+  //denoise_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled);
+  //transform_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled,
+  //              acc_TsTw);
+  gamut_map_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled,
+                acc_ctrl_pts, acc_weights, acc_coefs);
+  //tone_map_approx_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled);
+  descale_fxp(acc_result_scaled, row_size, col_size, acc_result);
   dmaStore(host_result, acc_result,
            row_size * col_size * CHAN_SIZE * sizeof(uint8_t));
 }
