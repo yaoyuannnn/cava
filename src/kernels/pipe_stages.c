@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "pipe_stages.h"
+#include "utility/utility.h"
 
 void scale_fxp(uint8_t *input, int row_size, int col_size, float *output) {
   ARRAY_3D(uint8_t, _input, input, row_size, col_size);
@@ -149,55 +150,44 @@ void transform_fxp(float *input, int row_size, int col_size, float *result,
 // Weighted radial basis function for gamut mapping
 //
 void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
-                   float *ctrl_pts, float *weights, float *coefs) {
+                   float *ctrl_pts, float *weights, float *coefs, float *l2_dist) {
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
   ARRAY_2D(float, _ctrl_pts, ctrl_pts, 3);
   ARRAY_2D(float, _weights, weights, 3);
   ARRAY_2D(float, _coefs, coefs, 3);
 
-  float dist[row_size][col_size][chan];
-
-  // Subtract the vectors
-  gm_sub_chan:
-  for (int chan = 0; chan < CHAN_SIZE; chan++)
-    gm_sub_row:
-    for (int row = 0; row < row_size; row++)
-      gm_sub_col:
-      for (int col = 0; col < col_size; col++)
-        _result[chan][row][col] = _input[chan][row][col] - ctrl_point_sum[chan];
-
-  // Take the L2 norm to get the distance
-  gm_l2_row:
-  for (int row = 0; row < row_size; row++) {
-    gm_l2_col:
+  // First, get the L2 norm from every pixel to the control points,
+  // Then, sum it and weight it. Finally, add the bias.
+  gm_rbf_row:
+  for (int row = 0; row < row_size; row++)
+    gm_rbf_col:
     for (int col = 0; col < col_size; col++) {
-      dist[row][col] = sqrt(_result[0][row][col] * _result[0][row][col] +
-                       _result[1][row][col] * _result[1][row][col] +
-                       _result[2][row][col] * _result[2][row][col]);
-      //printf("%f ", dist[row][col]);
-    }
-    //printf("\n");
-  }
-
-  gm_main_chan:
-  for (int chan = 0; chan < CHAN_SIZE; chan++)
-    gm_main_row:
-    for (int row = 0; row < row_size; row++)
-      gm_main_col:
-      for (int col = 0; col < col_size; col++) {
-        // Update persistant loop variables
+      gm_rbf_cp0:
+      for (int cp = 0; cp < num_ctrl_pts; cp++) {
+        l2_dist[cp] =
+            sqrt((_input[0][row][col] - _ctrl_pts[cp][0]) *
+                     (_input[0][row][col] - _ctrl_pts[cp][0]) +
+                 (_input[1][row][col] - _ctrl_pts[cp][1]) *
+                     (_input[1][row][col] - _ctrl_pts[cp][1]) +
+                 (_input[2][row][col] - _ctrl_pts[cp][2]) *
+                     (_input[2][row][col] - _ctrl_pts[cp][2]));
+      }
+      gm_rbf_chan:
+      for (int chan = 0; chan < CHAN_SIZE; chan++) {
         _result[chan][row][col] = 0.0;
-        gm_main_cp:
-        for (int cp = 0; cp < num_ctrl_pts; cp++)
-          _result[chan][row][col] += _weights[cp][chan] * dist[row][col];
-
+        gm_rbf_cp1:
+        for (int cp = 0; cp < num_ctrl_pts; cp++) {
+          _result[chan][row][col] +=
+              l2_dist[cp] * _weights[cp][chan];
+        }
         // Add on the biases for the RBF
         _result[chan][row][col] += _coefs[0][chan] +
                                    _coefs[1][chan] * _input[0][row][col] +
                                    _coefs[2][chan] * _input[1][row][col] +
                                    _coefs[3][chan] * _input[2][row][col];
       }
+    }
 }
 
 // Approximate tone mapping

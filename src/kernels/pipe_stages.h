@@ -22,6 +22,10 @@ typedef unsigned long uint64_t;
       __typeof__ (b) _b = (b); \
     _a < _b ? _a : _b; })
 
+#define abs(a) \
+  ({ __typeof__ (a) _a = (a); \
+    _a < 0 ? -_a : _a; })
+
 // This is to avoid a ton of spurious unused variable warnings when
 // we're not building for gem5.
 #define UNUSED(x) (void)(x)
@@ -68,7 +72,8 @@ void transform_fxp(float *input, int row_size, int col_size, float *result,
                    float *TsTw_tran);
 
 void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
-                   float *ctrl_pts, float *weights, float *coefs);
+                   float *ctrl_pts, float *weights, float *coefs,
+                   float *l2_dist);
 
 void tone_map_approx_fxp(float *input, int row_size, int col_size,
                          float *result);
