@@ -75,6 +75,9 @@ void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
                    float *ctrl_pts, float *weights, float *coefs,
                    float *l2_dist);
 
+void tone_map_fxp(float *input, int row_size, int col_size, float *tone_map,
+                  float *result);
+
 void tone_map_approx_fxp(float *input, int row_size, int col_size,
                          float *result);
 

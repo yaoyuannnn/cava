@@ -25,20 +25,22 @@ int num_ctrl_pts = 3702;
 
 void load_camera_params_hw(float *host_TsTw, float *host_ctrl_pts,
                            float *host_weights, float *host_coefs,
-                           float *acc_TsTw, float *acc_ctrl_pts,
-                           float *acc_weights, float *acc_coefs) {
+                           float *host_tone_map, float *acc_TsTw,
+                           float *acc_ctrl_pts, float *acc_weights,
+                           float *acc_coefs, float *acc_tone_map) {
   dmaLoad(acc_TsTw, host_TsTw, 9 * sizeof(float));
   dmaLoad(acc_ctrl_pts, host_ctrl_pts,
           num_ctrl_pts * CHAN_SIZE * sizeof(float));
   dmaLoad(acc_weights, host_weights, num_ctrl_pts * CHAN_SIZE * sizeof(float));
-  dmaLoad(acc_coefs, host_coefs, 12 * sizeof(float));
+  dmaLoad(acc_coefs, host_coefs, 4 * CHAN_SIZE * sizeof(float));
+  dmaLoad(acc_tone_map, host_tone_map, 256 * CHAN_SIZE * sizeof(float));
 }
 
 void isp_hw(uint8_t *host_input, uint8_t *host_result, int row_size,
             int col_size, uint8_t *acc_input, uint8_t *acc_result,
             float *acc_input_scaled, float *acc_result_scaled, float *acc_TsTw,
             float *acc_ctrl_pts, float *acc_weights, float *acc_coefs,
-            float *acc_l2_dist) {
+            float *acc_tone_map, float *acc_l2_dist) {
   dmaLoad(acc_input, host_input,
           row_size * col_size * CHAN_SIZE * sizeof(uint8_t));
   scale_fxp(acc_input, row_size, col_size, acc_input_scaled);
@@ -48,6 +50,8 @@ void isp_hw(uint8_t *host_input, uint8_t *host_result, int row_size,
                 acc_TsTw);
   gamut_map_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled,
                 acc_ctrl_pts, acc_weights, acc_coefs, acc_l2_dist);
+  //tone_map_fxp(acc_input_scaled, row_size, col_size, acc_tone_map,
+  //             acc_result_scaled);
   tone_map_approx_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled);
   descale_fxp(acc_result_scaled, row_size, col_size, acc_result);
   dmaStore(host_result, acc_result,
@@ -58,8 +62,8 @@ void camera_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
                  int col_size) {
   uint8_t *acc_input, *acc_result;
   float *acc_input_scaled, *acc_result_scaled;
-  float *host_TsTw, *host_ctrl_pts, *host_weights, *host_coefs;
-  float *acc_TsTw, *acc_ctrl_pts, *acc_weights, *acc_coefs, *acc_l2_dist;
+  float *host_TsTw, *host_ctrl_pts, *host_weights, *host_coefs, *host_tone_map;
+  float *acc_TsTw, *acc_ctrl_pts, *acc_weights, *acc_coefs, *acc_tone_map, *acc_l2_dist;
 
   host_TsTw = get_TsTw(cam_model_path, wb_index);
   float *trans = transpose_mat(host_TsTw, CHAN_SIZE, CHAN_SIZE);
@@ -68,6 +72,7 @@ void camera_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
   host_ctrl_pts = get_ctrl_pts(cam_model_path, num_ctrl_pts);
   host_weights = get_weights(cam_model_path, num_ctrl_pts);
   host_coefs = get_coefs(cam_model_path, num_ctrl_pts);
+  host_tone_map = get_tone_map(cam_model_path);
 
   acc_input = malloc_aligned(sizeof(uint8_t) * row_size * col_size * CHAN_SIZE);
   acc_result = malloc_aligned(sizeof(uint8_t) * row_size * col_size * CHAN_SIZE);
@@ -77,6 +82,7 @@ void camera_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
   acc_ctrl_pts = malloc_aligned(sizeof(float) * num_ctrl_pts * CHAN_SIZE);
   acc_weights = malloc_aligned(sizeof(float) * num_ctrl_pts * CHAN_SIZE);
   acc_coefs = malloc_aligned(sizeof(float) * 12);
+  acc_tone_map = malloc_aligned(sizeof(float) * 256 * CHAN_SIZE);
   acc_l2_dist = malloc_aligned(sizeof(float) * num_ctrl_pts);
 
   // Load camera model parameters for the ISP
@@ -87,10 +93,12 @@ void camera_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
   MAP_ARRAY_TO_ACCEL(ISP, "host_weights", host_weights,
                      sizeof(float) * num_ctrl_pts * CHAN_SIZE);
   MAP_ARRAY_TO_ACCEL(ISP, "host_coefs", host_coefs,
-                     sizeof(float) * 12);
+                     sizeof(float) * 4 * CHAN_SIZE);
+  MAP_ARRAY_TO_ACCEL(ISP, "host_tone_map", host_tone_map,
+                     sizeof(float) * 256 * CHAN_SIZE);
   INVOKE_KERNEL(ISP, load_camera_params_hw, host_TsTw, host_ctrl_pts,
-                host_weights, host_coefs, acc_TsTw, acc_ctrl_pts, acc_weights,
-                acc_coefs);
+                host_weights, host_coefs, host_tone_map, acc_TsTw, acc_ctrl_pts,
+                acc_weights, acc_coefs, acc_tone_map);
 
   // Invoke the ISP
   MAP_ARRAY_TO_ACCEL(ISP, "host_input", host_input,
@@ -99,7 +107,8 @@ void camera_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
                      sizeof(uint8_t) * row_size * col_size * CHAN_SIZE);
   INVOKE_KERNEL(ISP, isp_hw, host_input, host_result, row_size, col_size,
                 acc_input, acc_result, acc_input_scaled, acc_result_scaled,
-                acc_TsTw, acc_ctrl_pts, acc_weights, acc_coefs, acc_l2_dist);
+                acc_TsTw, acc_ctrl_pts, acc_weights, acc_coefs, acc_tone_map,
+                acc_l2_dist);
 
   free(acc_input);
   free(acc_result);
@@ -109,10 +118,12 @@ void camera_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
   free(host_ctrl_pts);
   free(host_weights);
   free(host_coefs);
+  free(host_tone_map);
   free(acc_TsTw);
   free(acc_ctrl_pts);
   free(acc_weights);
   free(acc_coefs);
+  free(acc_tone_map);
   free(acc_l2_dist);
 }
 

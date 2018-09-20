@@ -190,17 +190,35 @@ void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
     }
 }
 
-// Approximate tone mapping
-void tone_map_approx_fxp(float *input, int row_size, int col_size,
-                         float *result) {
+// Tone mapping
+void tone_map_fxp(float *input, int row_size, int col_size, float *tone_map,
+                  float *result) {
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
+  ARRAY_2D(float, _tone_map, tone_map, 3);
 
   tm_chan:
   for (int chan = 0; chan < CHAN_SIZE; chan++)
     tm_row:
     for (int row = 0; row < row_size; row++)
       tm_col:
+      for (int col = 0; col < col_size; col++) {
+        int x = _input[chan][row][col] * 255;
+        _result[chan][row][col] = _tone_map[x][chan];
+      }
+}
+
+// Approximate tone mapping
+void tone_map_approx_fxp(float *input, int row_size, int col_size,
+                         float *result) {
+  ARRAY_3D(float, _input, input, row_size, col_size);
+  ARRAY_3D(float, _result, result, row_size, col_size);
+
+  tm_apx_chan:
+  for (int chan = 0; chan < CHAN_SIZE; chan++)
+    tm_apx_row:
+    for (int row = 0; row < row_size; row++)
+      tm_apx_col:
       for (int col = 0; col < col_size; col++) {
         if (_input[chan][row][col] < 32)
           _result[chan][row][col] = _input[chan][row][col] * 4;

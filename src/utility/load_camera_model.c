@@ -286,3 +286,49 @@ float* get_coefs(char* cam_model_path, int num_cntrl_pts) {
   free(line);
   return coefs;
 }
+
+
+// Get tone mapping table
+float* get_tone_map(char* cam_model_path) {
+  float *tone_map;
+  int err = posix_memalign((void **)&tone_map, CACHELINE_SIZE,
+                           sizeof(float) * 256 * CHAN_SIZE);
+  assert(err == 0 && "Failed to allocate memory!");
+  char *line;
+  char *str;
+  float line_data[3];
+  size_t len = 0;
+  int line_idx = 0;
+
+  // Open file for reading
+  char file_name[] = "raw2jpg_respFcns.txt";
+  char file_path[100];
+  strcpy(file_path, cam_model_path);
+  strcat(file_path, file_name);
+  FILE *fp = fopen(file_path, "r");
+  if (fp == NULL) {
+    printf("Didn't find the camera model file!\n");
+    exit(1);
+  }
+
+  // Read a line at a time
+  while (getline(&line, &len, fp) != -1) {
+    str = strtok(line, " \n");
+    int i = 0;
+    while (str != NULL) {
+      line_data[i] = atof(str);
+      str = strtok(NULL, " \n");
+      i++;
+    }
+
+    if (line_idx >= 1 && line_idx <= 256) {
+      for (int j = 0; j < 3; j++) {
+        tone_map[(line_idx - 1) * 3 + j] = line_data[j];
+      }
+    }
+    line_idx = line_idx + 1;
+  }
+  fclose(fp);
+  free(line);
+  return tone_map;
+}
