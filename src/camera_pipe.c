@@ -50,9 +50,10 @@ void isp_hw(uint8_t *host_input, uint8_t *host_result, int row_size,
                 acc_TsTw);
   gamut_map_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled,
                 acc_ctrl_pts, acc_weights, acc_coefs, acc_l2_dist);
-  //tone_map_fxp(acc_input_scaled, row_size, col_size, acc_tone_map,
-  //             acc_result_scaled);
-  tone_map_approx_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled);
+  tone_map_fxp(acc_input_scaled, row_size, col_size, acc_tone_map,
+               acc_result_scaled);
+  // tone_map_approx_fxp(acc_input_scaled, row_size, col_size,
+  // acc_result_scaled);
   descale_fxp(acc_result_scaled, row_size, col_size, acc_result);
   dmaStore(host_result, acc_result,
            row_size * col_size * CHAN_SIZE * sizeof(uint8_t));

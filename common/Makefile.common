@@ -39,4 +39,4 @@ debug: $(LOCAL_SRCS) $(GEM5_SRCS)
 clean-native:
 	rm -f camera_pipe
 
-export WORKLOAD = demosaic_nn_hw
+export WORKLOAD = load_camera_params_hw,isp_hw
