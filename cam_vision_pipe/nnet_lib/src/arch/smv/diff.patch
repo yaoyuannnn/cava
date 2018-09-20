@@ -1,0 +1,62 @@
+diff --git a/nnet_lib/src/arch/smv/convolution.c b/nnet_lib/src/arch/smv/convolution.c
+index cb4622f..ec49b83 100644
+--- a/nnet_lib/src/arch/smv/convolution.c
++++ b/nnet_lib/src/arch/smv/convolution.c
+@@ -935,21 +935,43 @@ void smv_standard_convolution_layer_impl(data_list* host_activations,
+     ARRAY_4D(float16, _result, host_results->data[0].dense_hp->d,
+              result_height, result_rows, result_cols + result_pad);
+ 
+-    int result_2d_size = result_rows * (result_cols + result_pad);
+-    int kernel_size = k_rows *
+-             k_cols * (input_height + nhwc_weights_dims.align_pad);
+-    if (kernel_size > result_2d_size) {
+-        smv_wt_standard_convolution_layer_impl(host_activations,
+-                                               host_weights,
+-                                               layers,
+-                                               lnum,
+-                                               host_results,
+-                                               g_smv,
+-                                               device,
+-                                               sampling_param);
+-        return;
+-    }
+     conv_tiling_cfg tiling = convolution_divide_work(&curr_layer, g_smv);
++    int64_t num_input_tiles = tiling.l2_tiles[0].num_input_tiles;
++    int64_t num_output_tiles = tiling.l2_tiles[0].input_tiles[0].num_output_tiles;
++    int64_t kernel_size = k_rows * k_cols *
++                      (input_height + nhwc_weights_dims.align_pad);
++    int64_t weight_size = kernel_size * result_height * sizeof(float16);
++    int64_t ofmap_size =  result_rows * (result_cols + result_pad);
++    int64_t input_size = input_rows * input_cols *
++                     (input_height + activations_nhwc.align_pad) *
++                     sizeof(float16);
++    int64_t lat_dram = 140;
++    int64_t lat_l2 = 40;
++    int64_t orig_lat = (weight_size * num_input_tiles + input_size) * lat_dram;
++    int64_t new_lat = (weight_size + input_size) * lat_dram;
++    if (num_input_tiles > 1)
++        new_lat += (num_output_tiles - 1) * input_size * lat_l2;
++    if (new_lat < orig_lat) {
++        if (kernel_size < ofmap_size) {
++            printf("This is layer %d. The weight priority does potentially "
++                   "give better performance, but our current implementation "
++                   "doesn't support this case. It assumes that a single kernel "
++                   "size is larger than a single channel of the output feature "
++                   "maps.\n",
++                   lnum);
++        } else {
++            INFO_MSG("Use new tiling for layer %d.\n", lnum);
++            smv_wt_standard_convolution_layer_impl(host_activations,
++                                                   host_weights,
++                                                   layers,
++                                                   lnum,
++                                                   host_results,
++                                                   g_smv,
++                                                   device,
++                                                   sampling_param);
++            return;
++        }
++    }
+     set_sampling_parameters(&tiling, &curr_layer, sampling_param);
+     print_conv_tiling_cfg(&tiling, lnum);
+ 

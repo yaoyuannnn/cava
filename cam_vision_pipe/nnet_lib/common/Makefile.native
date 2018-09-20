@@ -1,0 +1,77 @@
+# Make rules for native host-side execution.
+
+include common/Makefile.arch
+
+ifeq ($(ARCH), EIGEN)
+$(error Please use 'make eigen' to build the Eigen implementation)
+endif
+ifeq ($(ARCH), MONOLITHIC)
+NATIVE_FULL_PATH_SRCS += $(SRC_DIR)/arch/monolithic.c
+COMP = $(CC)
+CFLAGS += -std=gnu99 -DTRANSPOSE_WEIGHTS=1
+else ifeq ($(ARCH), COMPOSABLE)
+NATIVE_FULL_PATH_SRCS += $(SRC_DIR)/arch/composable.c
+COMP = $(CC)
+CFLAGS += -std=gnu99 -DTRANSPOSE_WEIGHTS=1
+else ifeq ($(ARCH), SMIV)
+COMP = $(CXX)
+CPPFLAGS += -I$(MKLDNNROOT)/include
+CFLAGS += -std=gnu++11 $(NATIVE_SIMD_FLAGS) -mf16c -flax-vector-conversions
+NATIVE_FULL_PATH_SRCS += $(SRC_DIR)/arch/smiv.cpp
+else ifeq ($(ARCH), SMV)
+COMP = $(CXX)
+CPPFLAGS += -I$(MKLDNNROOT)/include -DTRANSPOSE_WEIGHTS=1
+CFLAGS += -std=gnu++11 $(NATIVE_SIMD_FLAGS) -mf16c -flax-vector-conversions
+NATIVE_FULL_PATH_SRCS += $(SRC_DIR)/arch/smv.cpp
+else
+$(error "Unknown architecture $(ARCH)!")
+endif
+
+# MKL-DNN does not work with static linking, so don't compile any MKL code
+# unless it's specifically enabled.
+ifeq ($(USE_MKLDNN), 1)
+CPPFLAGS += -DUSE_MKLDNN
+NATIVE_FULL_PATH_SRCS += $(SRC_DIR)/core/mkl/activation_functions.cpp \
+												 $(SRC_DIR)/core/mkl/batch_norm.cpp \
+												 $(SRC_DIR)/core/mkl/pooling.cpp \
+												 $(SRC_DIR)/utility/mkl/utility.cpp
+LFLAGS += -L$(MKLDNNROOT)/lib -lmkldnn
+else
+CFLAGS += -static
+endif
+LFLAGS += -pthread
+
+# Output binary name
+NATIVE = $(BUILD_DIR)/$(EXEC)-native
+DEBUG = $(BUILD_DIR)/$(EXEC)-debug
+
+# Debug flags
+native: DLEVEL=0
+debug: DLEVEL=2
+debug-verbose: DLEVEL=3
+
+# NOTE: Do not remove -std=gnu99! Required for Travis CI toolchain.
+native: CFLAGS+=-O3
+native: $(NATIVE)
+debug: $(DEBUG)
+debug-verbose: $(DEBUG)
+
+# Disable some warnings.
+native: CFLAGS+=-Wno-attributes
+
+CFLAGS += $(BMARK_SPECIFIC_CFLAGS) -DDMA_MODE $(INCLUDES) -flax-vector-conversions
+
+$(NATIVE): $(NATIVE_FULL_PATH_SRCS) $(GEM5_FULL_PATH_SRCS)
+	@echo Building benchmark $(EXEC) for native platform.
+	@mkdir -p $(BUILD_DIR)
+	@$(COMP) $(CPPFLAGS) $(CFLAGS) $^ -o $@ $(LFLAGS)
+
+$(DEBUG): $(NATIVE_FULL_PATH_SRCS) $(GEM5_FULL_PATH_SRCS)
+	@echo Building benchmark $(EXEC) for debugging
+	@mkdir -p $(BUILD_DIR)
+	@$(COMP) $(CPPFLAGS) $(CFLAGS) $^ -o $@ $(LFLAGS)
+
+clean-native:
+	@echo Cleaning native build products...
+	@rm -rf $(BUILD_DIR)/nnet-*-native
+	@rm -rf $(BUILD_DIR)/nnet-*-debug

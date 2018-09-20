@@ -1,0 +1,121 @@
+############ NOTES ###############
+# Define ACCEL_NAME, TRACER_HOME, ALADDIN_HOME, WORKLOAD, and SRCS
+# before including this.
+##################################
+
+include common/Makefile.arch
+
+MODULES = core core/smiv utility arch gem5
+
+.PHONY: dma-trace-binary run-trace clean-trace src-symlinks
+
+##################################
+#         TOP LEVEL RULES        #
+##################################
+
+dma-trace-binary: DLEVEL=0
+dma-trace-binary: build-trace
+
+##################################
+#      COMPILATION FLAGS         #
+##################################
+
+TRACER = $(TRACER_HOME)/lib/full_trace.so
+LOGGER = $(TRACER_HOME)/lib/trace_logger.llvm
+GET_LABELED_STMTS = $(TRACER_HOME)/bin/get-labeled-stmts
+
+CPPFLAGS += -DTRACE_MODE -DDMA_MODE
+LFLAGS += -lz -pthread
+
+################################
+#     BUILD PRODUCT REQS       #
+################################
+
+LLVM_VERSION = $(shell clang --version | grep -o -m 1 "[0-9\.]\+" | head -n 1)
+GEM5_DMA_SRC = gem5/dma_interface.c
+
+# The file containinng the main function must be instrumented LAST so that it
+# can include all labels discovered by the clangtool. Therefore, we take it out
+# of this list and manually append it to the end.
+ALL_TRACER_SRCS = $(filter-out $(NNET_FWD_MAIN), $(SRCS) $(GEM5_DMA_SRC)) \
+									$(NNET_FWD_MAIN)
+
+ifeq ($(ARCH), EIGEN)
+$(error Eigen requires C++, which LLVM-Tracer does not support!)
+endif
+ifeq ($(ARCH), MONOLITHIC)
+SRCS += arch/monolithic.c
+else ifeq ($(ARCH), COMPOSABLE)
+SRCS += arch/composable.c
+else ifeq ($(ARCH), SMIV)
+SRCS += $(SMIV_ARCH_SRCS) arch/smiv.c
+else ifeq ($(ARCH), SMV)
+SRCS += $(SMIV_ARCH_SRCS) $(SMV_ARCH_SRCS) arch/smv.c
+CPPFLAGS += -DTRANSPOSE_WEIGHTS=1
+else
+$(error "Unknown architecture $(ARCH)!")
+endif
+SUBBUILDDIRS = $(patsubst %, $(BUILD_DIR)/%, $(MODULES))
+
+LLVM_OBJS = $(patsubst %.c, $(BUILD_DIR)/%-opt.llvm, $(ALL_TRACER_SRCS))
+
+################################
+#         SANITY CHECKS        #
+################################
+
+ifeq ($(ARCH), EIGEN)
+$(error Cannot build trace for the Eigen implementation)
+endif
+
+#########################################################
+#        INSTRUMENTATION AND TRACE FILE GENERATION      #
+#########################################################
+
+build-trace: $(SUBBUILDDIRS) src-symlinks
+	@$(MAKE) -f common/Makefile.tracer $(BUILD_DIR)/$(EXEC)-instrumented
+
+src-symlinks:
+	@cp -asf $(CURRENT_DIR)/../src/* build/
+	@cp -asf $(ALADDIN_HOME)/$(GEM5_DMA_SRC) $(BUILD_DIR)/$(GEM5_DMA_SRC)
+
+$(SUBBUILDDIRS):
+	@mkdir -p $(SUBBUILDDIRS)
+
+%-labelmap: %.c
+	@$(GET_LABELED_STMTS) $^ -- \
+			-I$(LLVM_HOME)/lib/clang/$(LLVM_VERSION)/include \
+			$(CPPFLAGS) -mf16c $(BMARK_SPECIFIC_CFLAGS)
+	@cat labelmap >> $(BUILD_DIR)/labelmap
+
+$(BUILD_DIR)/full.llvm: $(LLVM_OBJS)
+	@echo Linking instrumented LLVM objects...
+	@llvm-link -o $@ $^ $(LOGGER)
+
+$(BUILD_DIR)/full.s: $(BUILD_DIR)/full.llvm
+	@llc -O0 -disable-fp-elim -filetype=asm -o $@ $<
+
+$(BUILD_DIR)/$(EXEC)-instrumented: $(BUILD_DIR)/full.s
+	@echo Producing final binary...
+	@$(CC) -g -O0 -fno-inline -o $@ $^ $(LFLAGS)
+
+%-opt.llvm: %.c %-labelmap
+	@echo Building $<
+	@clang -g -O1 -S -fno-slp-vectorize -fno-vectorize -fno-unroll-loops \
+        -fno-inline -fno-builtin \
+				-mavx \
+				-mf16c \
+				-emit-llvm \
+				$(CPPFLAGS) \
+        $(BMARK_SPECIFIC_CFLAGS) \
+        -o $*.llvm $<
+	@opt -S -load=$(TRACER) -fulltrace \
+				-labelmapwriter -trace-all-callees -i $(BUILD_DIR)/labelmap \
+				$*.llvm -o $*-opt.llvm
+
+clean-trace:
+	@echo "Cleaning trace build products..."
+	@rm -rf $(SUBBUILDDIRS)
+	@cd $(BUILD_DIR) && rm -rf *.llvm *.h *.c *.s labelmap *-instrumented
+	@rm -f dynamic_trace.gz
+	@rm -f labelmap
+	@rm -f output_labels.out
