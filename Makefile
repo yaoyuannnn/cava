@@ -1,6 +1,6 @@
 .PHONY: all help native dma-trace-binary \
                           gem5-cpu gem5-accel \
-                                clean-trace clean-gem5 clean-native clean gem5
+                             run clean-trace clean-gem5 clean-native clean gem5
 
 native:
 	@$(MAKE) -f common/Makefile.common native
@@ -25,6 +25,10 @@ clean-native:
 
 clean-trace:
 	@$(MAKE) -f common/Makefile.tracer clean-trace
+
+run:
+	./build/camera-pipe-native raw.bin result.bin
+	./scripts/load_and_convert.py --binary result.bin
 
 gem5: gem5-cpu gem5-accel
 
