@@ -15,32 +15,18 @@ typedef enum _argnum {
 
 typedef struct _arguments {
   char *args[NUM_ARGS];
-  char *raw_image_bin;
-  char *output_image_bin;
 } arguments;
 
 static char prog_doc[] = "\nCamera vision pipeline on gem5-Aladdin.\n";
 static char args_doc[] =
-    "ARG1 path/to/raw-image-binary ARG2 path/to/output-image-binary";
+    "path/to/raw-image-binary path/to/output-image-binary";
 static struct argp_option options[] = {
-    { "raw-file", 'r', "raw.bin", 0,
-      "File to read raw pixels from."},
-    { "output-file", 'o', "output.bin", 0,
-      "File to write output image."},
-    { 0 },
+  { 0 },
 };
 
 static error_t parse_opt(int key, char* arg, struct argp_state* state) {
   arguments *args = (arguments*)(state->input);
   switch (key) {
-    case 'r': {
-      args->raw_image_bin = arg;
-      break;
-    }
-    case 'o': {
-      args->output_image_bin = arg;
-      break;
-    }
     case ARGP_KEY_ARG: {
       if (state->arg_num >= NUM_REQUIRED_ARGS)
         argp_usage(state);
@@ -48,8 +34,11 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
       break;
     }
     case ARGP_KEY_END: {
-        if (state->arg_num < NUM_REQUIRED_ARGS)
-            argp_usage(state);
+        if (state->arg_num < NUM_REQUIRED_ARGS) {
+          printf("Not enough arguments! Got %d, require %d.\n", state->arg_num,
+                 NUM_REQUIRED_ARGS);
+          argp_usage(state);
+        }
         break;
     }
     default:
@@ -72,8 +61,9 @@ int main(int argc, char* argv[]) {
   int row_size, col_size;
 
   // Read a raw image.
-  printf("Reading a raw image from the binary file\n");
-  host_input_nwc = read_image_from_binary(args.raw_image_bin, &row_size, &col_size);
+  printf("Reading a raw image from %s\n", args.args[RAW_IMAGE_BIN]);
+  host_input_nwc =
+      read_image_from_binary(args.args[RAW_IMAGE_BIN], &row_size, &col_size);
   printf("Raw image shape: %d x %d x %d\n", row_size, col_size,
          CHAN_SIZE);
   // The input image is stored in HWC format. To make it more efficient for
@@ -91,8 +81,9 @@ int main(int argc, char* argv[]) {
   convert_chw_to_hwc(host_result, row_size, col_size, &host_result_nwc);
 
   // Output the image
-  printf("Writing output image to %s\n", argv[2]);
-  write_image_to_binary(args.output_image_bin, host_result_nwc, row_size, col_size);
+  printf("Writing output image to %s\n", args.args[OUTPUT_IMAGE_BIN]);
+  write_image_to_binary(args.args[OUTPUT_IMAGE_BIN], host_result_nwc, row_size,
+                        col_size);
 
   free(host_input);
   free(host_input_nwc);
