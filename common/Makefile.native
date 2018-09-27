@@ -12,12 +12,12 @@ LFLAGS += -pthread
 $(NATIVE): $(LOCAL_SRCS) $(GEM5_SRCS)
 	@echo Building benchmark for native machine.
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(NATIVE) $^ $(LFLAGS)
+	@$(CC) $(CFLAGS) $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(NATIVE) $^ $(LFLAGS)
 
 $(DEBUG): $(LOCAL_SRCS) $(GEM5_SRCS)
 	@echo Building benchmark for native machine with debug support.
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -ggdb3 $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(DEBUG) $^ $(LFLAGS)
+	@$(CC) $(CFLAGS) -ggdb3 $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(DEBUG) $^ $(LFLAGS)
 
 run:
 	./build/$(NATIVE) raw.bin result.bin
