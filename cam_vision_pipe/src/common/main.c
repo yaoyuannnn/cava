@@ -10,6 +10,9 @@
 #include "cam_pipe/kernels/pipe_stages.h"
 #include "cam_pipe/cam_pipe.h"
 
+#include "arch/common.h"
+#include "arch/interface.h"
+#include "core/ref/lookup_tables.h"
 #include "nnet_lib/utility/compression.h"
 #include "nnet_lib/utility/data_archive.h"
 #include "nnet_lib/utility/data_archive_bin.h"
@@ -17,8 +20,6 @@
 #include "nnet_lib/utility/profiling.h"
 #include "nnet_lib/utility/read_model_conf.h"
 #include "nnet_lib/utility/utility.h"
-#include "nnet_lib/nnet_fwd.h"
-#include "nnet_lib/arch/interface.h"
 
 int NUM_TEST_CASES;
 int NUM_CLASSES;
@@ -40,6 +41,9 @@ typedef enum _argnum {
 typedef struct _arguments {
     char* args[NUM_ARGS];
     int num_inputs;
+    int num_threads;
+    data_init_mode data_mode;
+    sigmoid_impl_t sigmoid_impl;
 } arguments;
 
 static char prog_doc[] = "\nCamera vision pipeline on gem5-Aladdin.\n";
@@ -53,6 +57,45 @@ static struct argp_option options[] = {
       "*.bin files are decoded as binary files." },
 };
 
+// Convert a string to a data initialization mode.
+//
+// If the string was a valid choice, this updates @mode and returns 0;
+// otherwise, returns 1.
+int str2mode(char* str, data_init_mode* mode) {
+    if (strncmp(str, "RANDOM", 7) == 0) {
+        *mode = RANDOM;
+        return 0;
+    } else if (strncmp(str, "FIXED", 6) == 0) {
+        *mode = FIXED;
+        return 0;
+    } else if (strncmp(str, "FAST_FIXED", 11) == 0) {
+        *mode = FAST_FIXED;
+        return 0;
+    } else if (strncmp(str, "READ_FILE", 10) == 0) {
+        *mode = READ_FILE;
+        return 0;
+    }
+    return 1;
+}
+
+// Convert a string to a sigmoid implementation mode.
+//
+// If the string was a valid choice, this updates @impl and returns 0;
+// otherwise, returns 1.
+int str2sigmoidimpl(char* str, sigmoid_impl_t* impl) {
+    if (strncmp(str, "exp-unit", 9) == 0) {
+        *impl = ExpUnit;
+        return 0;
+    } else if (strncmp(str, "centered-lut", 13) == 0) {
+        *impl = CenteredLUT;
+        return 0;
+    } else if (strncmp(str, "noncentered-lut", 16) == 0) {
+        *impl = NoncenteredLUT;
+        return 0;
+    }
+    return 1;
+}
+
 static error_t parse_opt(int key, char* arg, struct argp_state* state) {
     arguments* args = (arguments*)(state->input);
     switch (key) {
@@ -60,8 +103,22 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
             args->num_inputs = strtol(arg, NULL, 10);
             break;
         }
+        case 'd': {
+            if (str2mode(arg, &args->data_mode))
+                argp_usage(state);
+            break;
+        }
+        case 'm': {
+            if (str2sigmoidimpl(arg, &args->sigmoid_impl))
+                argp_usage(state);
+            break;
+        }
         case 'f': {
             args->args[DATA_FILE] = arg;
+            break;
+        }
+        case 't': {
+            args->num_threads = strtol(arg, NULL, 10);
             break;
         }
         case ARGP_KEY_ARG: {
@@ -72,9 +129,20 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
         }
         case ARGP_KEY_END: {
             if (state->arg_num < NUM_REQUIRED_ARGS) {
-                printf("Not enough arguments! Got %d, require %d.\n",
-                       state->arg_num,
-                       NUM_REQUIRED_ARGS);
+                fprintf(stderr,
+                        "Not enough arguments! Got %d, require %d.\n",
+                        state->arg_num,
+                        NUM_REQUIRED_ARGS);
+                argp_usage(state);
+            }
+            break;
+        }
+        case ARGP_KEY_FINI: {
+            if (args->data_mode == READ_FILE && !args->args[DATA_FILE]) {
+                fprintf(stderr,
+                        "[ERROR]: You must specify a data file to read "
+                        "parameters "
+                        "from.\n");
                 argp_usage(state);
             }
             break;
@@ -83,6 +151,97 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
             return ARGP_ERR_UNKNOWN;
     }
     return 0;
+}
+
+void set_default_args(arguments* args) {
+    args->num_inputs = 1;
+    args->num_threads = 0;
+    args->data_mode = RANDOM;
+    args->sigmoid_impl = ExpUnit;
+    for (int i = 0; i < NUM_ARGS; i++) {
+        args->args[i] = NULL;
+    }
+}
+
+data_list* pack_compress_colmajor_weights(float* weights,
+                                          dims_t* orig_dims,
+                                          dims_t* bias_dims) {
+    // Compress the weights without the bias row first.
+    // Swap the rows and columns.
+    dims_t transposed_dims = *orig_dims;
+    int rows = transposed_dims.rows;
+    transposed_dims.rows = transposed_dims.cols;
+    transposed_dims.cols = rows;
+    transposed_dims.align_pad =
+            calc_padding(transposed_dims.rows, DATA_ALIGNMENT);
+    csr_array_t* weights_csr = compress_dense_data_csr(weights, &transposed_dims);
+    packed_csr_array_t* packed_weights_csr =
+            pack_csr_array_vec8_f16(weights_csr, &transposed_dims);
+
+    // Just store biases as an uncompressed buffer.
+    float* bias_loc = weights + get_dims_size(&transposed_dims);
+    farray_t* biases_storage = init_farray(bias_dims->cols, false);
+    memcpy(biases_storage->d, bias_loc, biases_storage->size * sizeof(float));
+
+    data_list* list = init_data_list(2);
+    list->data[0].packed = packed_weights_csr;
+    list->data[1].dense = biases_storage;
+    list->type[0] = PackedCSR;
+    list->type[1] = Uncompressed;
+    free_csr_array_t(weights_csr);
+
+    return list;
+}
+
+// If any of the layers in the network can use compressed weights storage, then
+// compress their (currently) dense weights and update the layer's weight
+// storage type accordingly.
+void process_compressed_weights(network_t* network,
+                                farray_t* weights,
+                                iarray_t* compress_mask) {
+    for (int i = 1; i < network->depth; i++) {
+        layer_t* layer = &network->layers[i];
+        assert(compress_mask->d[i] < NumDataStorageTypes &&
+               "Invalid value of compress type found!");
+        data_storage_t storage_type = (data_storage_t)compress_mask->d[i];
+        float* weights_loc =
+                (weights->d + get_weights_loc_for_layer(network->layers, i));
+        if (storage_type == Uncompressed) {
+            layer->host_weights = init_data_list(1);
+            // Don't do a memcpy - this gets extremely expensive in simulation
+            // with large models. Instead, use the pointer directly and mark
+            // the array as un-freeable.
+            farray_t* layer_weights = init_farray(0, false);
+            layer_weights->d = weights_loc;
+            layer_weights->size = get_num_weights_layer(layer, 0);
+            layer->host_weights->data[0].dense = layer_weights;
+            layer->host_weights->type[0] = Uncompressed;
+        } else if (storage_type == CSR) {
+            dims_t dims_with_bias = layer->weights;
+            dims_with_bias.rows += layer->biases.rows;
+            csr_array_t* csr =
+                    compress_dense_data_csr(weights_loc, &dims_with_bias);
+            layer->host_weights = init_data_list(1);
+            layer->host_weights->data[0].csr = csr;
+            layer->host_weights->type[0] = CSR;
+        } else if (storage_type == PackedCSR) {
+#if TRANSPOSE_WEIGHTS == 1
+            layer->host_weights = pack_compress_colmajor_weights(
+                    weights_loc, &layer->weights, &layer->biases);
+#else
+            dims_t dims_with_bias = layer->weights;
+            dims_with_bias.rows += layer->biases.rows;
+            csr_array_t* csr =
+                    compress_dense_data_csr(weights_loc, &dims_with_bias);
+            packed_csr_array_t* packed_csr =
+                    pack_csr_array_vec8_f16(csr, &dims_with_bias);
+            layer->host_weights = init_data_list(1);
+            layer->host_weights->data[0].packed = packed_csr;
+            layer->host_weights->type[0] = PackedCSR;
+            free_csr_array_t(csr);
+#endif
+        }
+    }
 }
 
 // Free weights used in the network.
@@ -100,6 +259,7 @@ static struct argp parser = { options, parse_opt, args_doc, prog_doc };
 int main(int argc, char* argv[]) {
     // Parse the arguments.
     arguments args;
+    set_default_args(&args);
     argp_parse(&parser, argc, argv, 0, 0, &args);
 
     //////////////////////////////////////////////////////////////////////////
@@ -149,6 +309,10 @@ int main(int argc, char* argv[]) {
     // the "vision" part of the camera vision pipeline.
     //////////////////////////////////////////////////////////////////////////
 
+    NUM_TEST_CASES = args.num_inputs;
+    NUM_WORKER_THREADS = args.num_threads;
+    SIGMOID_IMPL = args.sigmoid_impl;
+
     network_t network;
     device_t* device;
     sampling_param_t* sampling_param;
@@ -159,19 +323,20 @@ int main(int argc, char* argv[]) {
 
     // Sanity check on the dimensionality of the input layer. It should match
     // the image generated from the camera pipeline.
-    if (row_size != network.layers[0].inputs.rows ||
-        col_size != network.layers[0].inputs.cols ||
-        CHAN_SIZE != network.layers[0].inputs.height) {
-        printf("Input layer shape: %d x %d x %d. Does not match the image from "
-               "the camera pipeline! Image shape: %d x %d x %d\n",
-               network.layers[0].inputs.rows,
-               network.layers[0].inputs.cols,
-               network.layers[0].inputs.height,
-               row_size,
-               col_size,
-               CHAN_SIZE);
-        exit(1);
-    }
+    //if (row_size != network.layers[0].inputs.rows ||
+    //    col_size != network.layers[0].inputs.cols ||
+    //    CHAN_SIZE != network.layers[0].inputs.height) {
+    //    fprintf(stderr,
+    //            "Input layer shape: %d x %d x %d. Does not match the image "
+    //            "from the camera pipeline! Image shape: %d x %d x %d\n",
+    //            network.layers[0].inputs.rows,
+    //            network.layers[0].inputs.cols,
+    //            network.layers[0].inputs.height,
+    //            row_size,
+    //            col_size,
+    //            CHAN_SIZE);
+    //    exit(1);
+    //}
 
     // Initialize weights, data, and labels.
     // This is just a container for the global set of weights in the entire
@@ -181,6 +346,9 @@ int main(int argc, char* argv[]) {
     data_list* outputs = init_data_list(1);
     layer_t input_layer = network.layers[0];
     data_list* global_weights = init_data_list(1);
+    int total_weight_size =
+            get_total_num_weights(network.layers, network.depth);
+    printf("  Total weights: %d elements\n", total_weight_size);
     iarray_t labels = { NULL, 0 };
     labels.size = NUM_TEST_CASES;
     labels.d = (int*)malloc_aligned(labels.size * sizeof(float));
@@ -193,12 +361,28 @@ int main(int argc, char* argv[]) {
     memset(compress_type.d, 0, compress_type.size * sizeof(int));
 
     mmapped_file model_file = init_mmapped_file();
-    model_file = read_all_from_file(args.args[DATA_FILE],
-                                    &network,
-                                    &global_weights->data[0].dense,
-                                    &inputs->data[0].dense,
-                                    &labels,
-                                    &compress_type);
+    if (args.data_mode == READ_FILE) {
+        model_file = read_all_from_file(
+                args.args[DATA_FILE], &network, &global_weights->data[0].dense,
+                &inputs->data[0].dense, &labels, &compress_type);
+    } else {
+        global_weights->data[0].dense = init_farray(total_weight_size, false);
+        inputs->data[0].dense = init_farray(
+                NUM_TEST_CASES * get_dims_size(&input_layer.inputs), true);
+        init_weights(global_weights->data[0].dense->d, network.layers,
+                     network.depth, args.data_mode, TRANSPOSE_WEIGHTS);
+        init_data(inputs->data[0].dense->d, &network, NUM_TEST_CASES,
+                  args.data_mode);
+        init_labels(labels.d, NUM_TEST_CASES, args.data_mode);
+    }
+    inputs->type[0] = Uncompressed;
+    global_weights->type[0] = Uncompressed;
+
+    init_sigmoid_table(&sigmoid_table);
+    init_exp_table(&exp_table);
+    process_compressed_weights(
+            &network, global_weights->data[0].dense, &compress_type);
+    fflush(stdout);
 
     // Run a forward pass through the neural net
     printf("Running forward pass\n");
@@ -212,6 +396,16 @@ int main(int argc, char* argv[]) {
                             ? outputs->data[0].dense->d
                             : inputs->data[0].dense->d;
 
+    float error_fraction =
+            compute_errors(result, labels.d, NUM_TEST_CASES, NUM_CLASSES);
+    write_output_labels("output_labels.out",
+                        result,
+                        NUM_TEST_CASES,
+                        NUM_CLASSES,
+                        network.layers[network.depth - 1].outputs.align_pad);
+
+    printf("Fraction incorrect (over %d cases) = %f\n", NUM_TEST_CASES,
+           error_fraction);
 
     // Free up the allocated memories.
     if (sigmoid_table)
