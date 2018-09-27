@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "kernels/pipe_stages.h"
-#include "utility/load_camera_model.h"
-#include "utility/utility.h"
+#include "utility/load_cam_model.h"
+#include "utility/cam_pipe_utility.h"
 #ifdef DMA_MODE
 #include "gem5_harness.h"
 #endif
@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////
 
 // Path to the camera model to be used
-char cam_model_path[] = "cam_models/NikonD7000/";
+char cam_model_path[] = "cam_vision_pipe/cam_models/NikonD7000/";
 
 // White balance index (select white balance from transform file)
 // The first white balance in the file has a wb_index of 1
@@ -23,11 +23,11 @@ int wb_index = 6;
 // Number of control points
 int num_ctrl_pts = 3702;
 
-void load_camera_params_hw(float *host_TsTw, float *host_ctrl_pts,
-                           float *host_weights, float *host_coefs,
-                           float *host_tone_map, float *acc_TsTw,
-                           float *acc_ctrl_pts, float *acc_weights,
-                           float *acc_coefs, float *acc_tone_map) {
+void load_cam_params_hw(float *host_TsTw, float *host_ctrl_pts,
+                        float *host_weights, float *host_coefs,
+                        float *host_tone_map, float *acc_TsTw,
+                        float *acc_ctrl_pts, float *acc_weights,
+                        float *acc_coefs, float *acc_tone_map) {
   dmaLoad(acc_TsTw, host_TsTw, 9 * sizeof(float));
   dmaLoad(acc_ctrl_pts, host_ctrl_pts,
           num_ctrl_pts * CHAN_SIZE * sizeof(float));
@@ -59,8 +59,8 @@ void isp_hw(uint8_t *host_input, uint8_t *host_result, int row_size,
            row_size * col_size * CHAN_SIZE * sizeof(uint8_t));
 }
 
-void camera_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
-                 int col_size) {
+void cam_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
+              int col_size) {
   uint8_t *acc_input, *acc_result;
   float *acc_input_scaled, *acc_result_scaled;
   float *host_TsTw, *host_ctrl_pts, *host_weights, *host_coefs, *host_tone_map;
@@ -97,9 +97,9 @@ void camera_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
                      sizeof(float) * 4 * CHAN_SIZE);
   MAP_ARRAY_TO_ACCEL(ISP, "host_tone_map", host_tone_map,
                      sizeof(float) * 256 * CHAN_SIZE);
-  INVOKE_KERNEL(ISP, load_camera_params_hw, host_TsTw, host_ctrl_pts,
-                host_weights, host_coefs, host_tone_map, acc_TsTw, acc_ctrl_pts,
-                acc_weights, acc_coefs, acc_tone_map);
+  INVOKE_KERNEL(ISP, load_cam_params_hw, host_TsTw, host_ctrl_pts, host_weights,
+                host_coefs, host_tone_map, acc_TsTw, acc_ctrl_pts, acc_weights,
+                acc_coefs, acc_tone_map);
 
   // Invoke the ISP
   MAP_ARRAY_TO_ACCEL(ISP, "host_input", host_input,

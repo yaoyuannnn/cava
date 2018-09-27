@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "utility.h"
+
+#include "utility/cam_pipe_utility.h"
 #include "kernels/pipe_stages.h"
 
 uint8_t *read_image_from_binary(char *file_path, int *row_size, int *col_size) {
@@ -34,13 +35,6 @@ void write_image_to_binary(char *file_path, uint8_t *image, int row_size, int co
   int size = row_size * col_size * CHAN_SIZE;
   fwrite(image, sizeof(uint8_t), size, fp);
   fclose(fp);
-}
-
-void *malloc_aligned(size_t size) {
-  void *ptr = NULL;
-  int err = posix_memalign((void **)&ptr, CACHELINE_SIZE, size);
-  assert(err == 0 && "Failed to allocate memory!");
-  return ptr;
 }
 
 float *transpose_mat(float *inmat, int width, int height) {

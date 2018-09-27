@@ -1,0 +1,6 @@
+[submodule "FP16"]
+        path = cam_vision_pipe/src/nnet_lib/third_party/FP16
+        url = https://github.com/xyzsam/FP16
+[submodule "nnet_lib/src/third_party/m5threads"]
+        path = cam_vision_pipe/src/nnet_lib/third_party/m5threads
+        url = https://github.com/xyzsam/m5threads

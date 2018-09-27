@@ -1,5 +1,5 @@
-#ifndef _LOAD_CAMERA_MODEL_H_
-#define _LOAD_CAMERA_MODEL_H_
+#ifndef _LOAD_CAM_MODEL_H_
+#define _LOAD_CAM_MODEL_H_
 
 // Get color space transform
 float *get_Ts(char *cam_model_path);

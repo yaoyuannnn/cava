@@ -1,0 +1,24 @@
+include common/Makefile.common
+
+NATIVE = $(BUILD_DIR)/$(EXE)-native
+DEBUG = $(BUILD_DIR)/$(EXE)-debug
+
+CFLAGS += -mf16c -flax-vector-conversions
+LFLAGS += -pthread
+
+native: $(LOCAL_SRCS) $(GEM5_SRCS)
+	@echo Building benchmark for native machine.
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(NATIVE) $^ $(LFLAGS)
+
+debug: $(LOCAL_SRCS) $(GEM5_SRCS)
+	@echo Building benchmark for native machine with debug support.
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -ggdb3 $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(DEBUG) $^ $(LFLAGS)
+
+run:
+	./build/$(NATIVE) raw.bin result.bin
+	./scripts/load_and_convert.py --binary result.bin
+
+clean-native:
+	rm -f camera_pipe

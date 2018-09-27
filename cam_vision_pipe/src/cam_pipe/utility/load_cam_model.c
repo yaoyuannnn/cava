@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "common/utility.h"
 #include "kernels/pipe_stages.h"
-#include "load_camera_model.h"
+#include "load_cam_model.h"
 
 // Get color space transform
 float* get_Ts(char* cam_model_path) {

@@ -1,8 +1,9 @@
-#ifndef _UTILITY_H_
-#define _UTILITY_H_
+#ifndef _NNET_LIB_UTILITY_H_
+#define _NNET_LIB_UTILITY_H_
 
 #include <stdbool.h>
 #include "nnet_fwd.h"
+#include "common/utility.h"
 
 float* grab_matrix(float* w, int n, int* n_rows, int* n_columns);
 size_t get_weights_loc_for_layer(layer_t* layers, int layer);
@@ -140,9 +141,7 @@ data_list* create_new_data_list_if_necessary(data_list* curr_data,
                                              int size_in_bytes,
                                              data_storage_t tgt_storage_fmt);
 void require_data_type(data_list* list, int index, data_storage_t req_type);
-void* malloc_aligned(size_t size);
 
-void* malloc_aligned(size_t size);
 const char* data_storage_str(data_storage_t type);
 void init_data_list_storage(data_list* list, int len);
 data_list* init_data_list(int len);

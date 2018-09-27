@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "pipe_stages.h"
-#include "utility/utility.h"
+#include "utility/cam_pipe_utility.h"
 
 void scale_fxp(uint8_t *input, int row_size, int col_size, float *output) {
   ARRAY_3D(uint8_t, _input, input, row_size, col_size);

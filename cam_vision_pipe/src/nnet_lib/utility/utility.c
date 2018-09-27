@@ -603,14 +603,6 @@ data_list* create_new_data_list_if_necessary(data_list* curr_data,
     return new_data;
 }
 
-void* malloc_aligned(size_t size) {
-    void* ptr = NULL;
-    int err = posix_memalign(
-            (void**)&ptr, CACHELINE_SIZE, next_multiple(size, CACHELINE_SIZE));
-    assert(err == 0 && "Failed to allocate memory!");
-    return ptr;
-}
-
 void init_data_list_storage(data_list* list, int len) {
     if (len > 0) {
         list->data = (union DataFormat*)malloc(sizeof(union DataFormat) * len);
