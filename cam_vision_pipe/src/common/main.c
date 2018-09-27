@@ -323,20 +323,20 @@ int main(int argc, char* argv[]) {
 
     // Sanity check on the dimensionality of the input layer. It should match
     // the image generated from the camera pipeline.
-    //if (row_size != network.layers[0].inputs.rows ||
-    //    col_size != network.layers[0].inputs.cols ||
-    //    CHAN_SIZE != network.layers[0].inputs.height) {
-    //    fprintf(stderr,
-    //            "Input layer shape: %d x %d x %d. Does not match the image "
-    //            "from the camera pipeline! Image shape: %d x %d x %d\n",
-    //            network.layers[0].inputs.rows,
-    //            network.layers[0].inputs.cols,
-    //            network.layers[0].inputs.height,
-    //            row_size,
-    //            col_size,
-    //            CHAN_SIZE);
-    //    exit(1);
-    //}
+    if (row_size != network.layers[0].inputs.rows ||
+        col_size != network.layers[0].inputs.cols ||
+        CHAN_SIZE != network.layers[0].inputs.height) {
+        fprintf(stderr,
+                "Input layer shape: %d x %d x %d. Does not match the image "
+                "from the camera pipeline! Image shape: %d x %d x %d\n",
+                network.layers[0].inputs.rows,
+                network.layers[0].inputs.cols,
+                network.layers[0].inputs.height,
+                row_size,
+                col_size,
+                CHAN_SIZE);
+        exit(1);
+    }
 
     // Initialize weights, data, and labels.
     // This is just a container for the global set of weights in the entire
@@ -371,8 +371,12 @@ int main(int argc, char* argv[]) {
                 NUM_TEST_CASES * get_dims_size(&input_layer.inputs), true);
         init_weights(global_weights->data[0].dense->d, network.layers,
                      network.depth, args.data_mode, TRANSPOSE_WEIGHTS);
-        init_data(inputs->data[0].dense->d, &network, NUM_TEST_CASES,
-                  args.data_mode);
+        //init_data(inputs->data[0].dense->d, &network, NUM_TEST_CASES,
+        //          args.data_mode);
+        init_data_from_image(inputs->data[0].dense->d,
+                             &network,
+                             NUM_TEST_CASES,
+                             host_result);
         init_labels(labels.d, NUM_TEST_CASES, args.data_mode);
     }
     inputs->type[0] = Uncompressed;

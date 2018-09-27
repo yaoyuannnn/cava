@@ -247,6 +247,39 @@ void init_weights(float* weights,
     // boring
 }
 
+void init_data_from_image(float* data,
+                          network_t* network,
+                          size_t num_test_cases,
+                          uint8_t* image) {
+    unsigned i;
+    int j, k, l;
+    int input_rows, input_cols, input_height, input_align_pad;
+
+    input_rows = network->layers[0].inputs.rows;
+    input_cols = network->layers[0].inputs.cols;
+    input_height = network->layers[0].inputs.height;
+    input_align_pad = network->layers[0].inputs.align_pad;
+
+    ARRAY_4D(float, _data, data, input_height, input_rows,
+             input_cols + input_align_pad);
+    ARRAY_4D(uint8_t, _image, image, input_height, input_rows,
+             input_cols);
+    for (i = 0; i < num_test_cases; i++) {
+        for (j = 0; j < input_height; j++) {
+            for (k = 0; k < input_rows; k++) {
+                for (l = 0; l < input_cols; l++) {
+                    _data[i][j][k][l] = _image[i][j][k][l] * 1.0;
+                }
+                for (l = input_cols; l < input_cols + input_align_pad; l++) {
+                    _data[i][j][k][l] = 0;
+                }
+            }
+        }
+    }
+    PRINT_MSG("Input activations:\n");
+    PRINT_DEBUG4D(data, input_rows, input_cols + input_align_pad, input_height);
+}
+
 void init_data(float* data,
                network_t* network,
                size_t num_test_cases,

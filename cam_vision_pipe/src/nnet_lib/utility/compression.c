@@ -146,8 +146,14 @@ fp16array_t* pack_data_fp16(farray_t* sp_data, packed_fp16* dest_buf) {
         hp_data->d = dest_buf;
         hp_data->freeable = false;
     }
-    memset(hp_data->d, 0,
-           next_multiple(hp_data->size * sizeof(packed_fp16), CACHELINE_SIZE));
+    if (hp_data->size * sizeof(packed_fp16) < CACHELINE_SIZE) {
+        memset(hp_data->d, 0, hp_data->size * sizeof(packed_fp16));
+    } else {
+        memset(hp_data->d,
+               0,
+               next_multiple(
+                       hp_data->size * sizeof(packed_fp16), CACHELINE_SIZE));
+    }
     for (size_t i = 0; i < sp_data->size; i++) {
         bool use_lo_half = (i % 2 == 0);
         hp_data->d[i / 2] |= ((int)_CVT_SS_SH(sp_data->d[i], 0))

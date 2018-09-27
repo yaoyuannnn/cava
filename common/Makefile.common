@@ -1,4 +1,4 @@
-CFLAGS?=-O3 -Wall -Wno-unused-label -Wno-maybe-uninitialized -DARCHITECTURE=SMV -DTRANSPOSE_WEIGHTS=1
+CFLAGS?=-O3 -Wall -Wno-unused-label -Wno-unused-but-set-variable -Wno-maybe-uninitialized -DARCHITECTURE=SMV -DTRANSPOSE_WEIGHTS=1
 LFLAGS += -lm -lconfuse -lrt
 
 SRC_DIR = cam_vision_pipe/src

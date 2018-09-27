@@ -24,7 +24,7 @@ clean-gem5:
 	@$(MAKE) -f common/Makefile.gem5 clean-gem5
 
 clean-native:
-	@$(MAKE) -f common/Makefile.common clean-native
+	@$(MAKE) -f common/Makefile.native clean-native
 
 clean-trace:
 	@$(MAKE) -f common/Makefile.tracer clean-trace

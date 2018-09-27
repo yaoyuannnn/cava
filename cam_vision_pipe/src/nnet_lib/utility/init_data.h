@@ -46,6 +46,10 @@ void init_weights(float* weights,
                   int num_layers,
                   data_init_mode mode,
                   bool transpose);
+void init_data_from_image(float* data,
+                          network_t* network,
+                          size_t num_test_cases,
+                          uint8_t* image);
 void init_data(float* data,
                network_t* network,
                size_t num_test_cases,
