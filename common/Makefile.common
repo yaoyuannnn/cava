@@ -1,4 +1,7 @@
-CFLAGS?=-O3 -Wall -Wno-unused-label -Wno-unused-but-set-variable -Wno-maybe-uninitialized -DARCHITECTURE=SMV -DTRANSPOSE_WEIGHTS=1
+DLEVEL ?= 0
+CFLAGS?=-O3 -Wall -Wno-unused-label -Wno-unused-but-set-variable \
+        -Wno-maybe-uninitialized -DARCHITECTURE=SMV -DTRANSPOSE_WEIGHTS=1 \
+        -DDEBUG_LEVEL=$(DLEVEL)
 LFLAGS += -lm -lconfuse -lrt
 
 SRC_DIR = cam_vision_pipe/src

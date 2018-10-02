@@ -399,7 +399,8 @@ size_t compute_blocked_nhwc_size(dims_t* input_dims,
     // Determine how large the final converted result will be.
     const int num_blocks = ceil(((float)input_dims->height) / block_size);
     const int per_channel_size = input_dims->rows * input_dims->cols;
-    const int last_block_size = input_dims->height % block_size;
+    const int last_block_size =
+            (num_blocks == 1) ? 0 : input_dims->height % block_size;
     const int padded_block_size =
             block_size + calc_padding(block_size, data_alignment);
     return (num_blocks * padded_block_size + last_block_size) *
@@ -460,7 +461,7 @@ int convert_nchw_to_blocked_nhwc_fp16(fp16array_t* input,
     const size_t total_converted_size =
             compute_blocked_nhwc_size(&input_dims, block_size, data_alignment);
     *result = create_new_fp16array_if_necessary(
-            *result, total_converted_size * 2, true);
+            *result, total_converted_size, true);
 
     dims_t block_dims = input_dims;
     packed_fp16* curr_src = input->d;

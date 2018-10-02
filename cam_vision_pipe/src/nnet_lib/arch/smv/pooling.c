@@ -375,7 +375,7 @@ void smv_pooling_layer_impl(data_list* inputs,
     nhwc_outputs->type[0] = inputs->type[0];
     nhwc_outputs->data[0].dense_hp = init_fp16array(
             compute_blocked_nhwc_size(
-                    &curr_layer->outputs, VECTOR_SIZE, DATA_ALIGNMENT) * 2,
+                    &curr_layer->outputs, VECTOR_SIZE, DATA_ALIGNMENT),
             true);
 
     for (int img = 0; img < NUM_TEST_CASES; img++) {

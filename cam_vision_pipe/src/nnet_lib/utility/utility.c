@@ -712,9 +712,7 @@ fp16array_t* init_fp16array(int num_elems, bool zero) {
         array->freeable = false;
     }
     if (zero && array->size > 0) {
-        unsigned bytes = next_multiple(
-                array->size * sizeof(packed_fp16), CACHELINE_SIZE);
-        memset(array->d, 0, bytes);
+        memset(array->d, 0, array->size * sizeof(packed_fp16));
     }
     return array;
 }
@@ -748,7 +746,7 @@ fp16array_t* create_new_fp16array_if_necessary(fp16array_t* array,
                                                bool zero) {
     if (!array) {
         array = init_fp16array(num_elems, zero);
-    } else if (array->d && array->size < num_elems) {
+    } else if (array->d && array->size * 2 < num_elems) {
         free(array->d);
         array = init_fp16array(num_elems, zero);
     } else if (array->d == NULL) {

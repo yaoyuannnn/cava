@@ -203,6 +203,7 @@ void close_profiling_log() {
     log->head = NULL;
     log->tail = NULL;
     profiling_enabled = false;
+    free(log);
 }
 
 void set_profiling_type_sampled(int sampled_iters, int total_iters) {

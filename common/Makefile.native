@@ -5,6 +5,12 @@ DEBUG = $(BUILD_DIR)/$(EXE)-debug
 
 native: $(NATIVE)
 debug: $(DEBUG)
+debug-verbose: $(DEBUG)
+
+# Debug flags
+native: DLEVEL=0
+debug: DLEVEL=2
+debug-verbose: DLEVEL=3
 
 CFLAGS += -mf16c -flax-vector-conversions
 LFLAGS += -pthread
@@ -17,11 +23,11 @@ $(NATIVE): $(LOCAL_SRCS) $(GEM5_SRCS)
 $(DEBUG): $(LOCAL_SRCS) $(GEM5_SRCS)
 	@echo Building benchmark for native machine with debug support.
 	@mkdir -p $(BUILD_DIR)
-	@$(CC) $(CFLAGS) -ggdb3 $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(DEBUG) $^ $(LFLAGS)
+	@$(CC) $(CFLAGS) -ggdb3 $(INCLUDES) -DGEM5 -DDMA_MODE -DDMA_INTERFACE_V3 -o $(DEBUG) $^ $(LFLAGS)
 
 run:
 	./build/$(NATIVE) raw.bin result.bin
 	./scripts/load_and_convert.py --binary result.bin
 
 clean-native:
-	rm $(NATIVE) $(DEBUG)
+	rm -f $(NATIVE) $(DEBUG)

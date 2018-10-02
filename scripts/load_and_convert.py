@@ -8,16 +8,16 @@ import struct
 def convert_raw_to_binary(raw_name):
     im = imageio.imread(raw_name)
     print im.shape
-    for i in xrange(im.shape[0]):
-      for j in xrange(im.shape[1]):
-          print '(',
-          print im[i][j][0], im[i][j][1], im[i][j][2],
-          print ')',
-      print
-    exit(0)
+    #for i in xrange(im.shape[0]):
+    #  for j in xrange(im.shape[1]):
+    #      print '(',
+    #      print im[i][j][0], im[i][j][1], im[i][j][2],
+    #      print ')',
+    #  print
+    #exit(0)
 
     # Write the raw image to a binary file
-    bin_name = raw_name.split('.')[:-1]+'.bin'
+    bin_name = raw_name.replace('png', 'bin')
     with open(bin_name, 'w') as bin_file:
       bin_file = open(bin_name, 'w')
       bin_file.write(struct.pack('i', im.shape[0]))
