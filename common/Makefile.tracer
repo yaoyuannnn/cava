@@ -1,6 +1,6 @@
 include common/Makefile.common
 
-MODULES = kernels utility gem5
+MODULES = cam_pipe/kernels cam_pipe/utility nnet_lib/core nnet_lib/utility nnet_lib/arch gem5
 
 .PHONY: dma-trace-binary run-trace clean-trace src-symlinks
 
@@ -18,7 +18,7 @@ TRACER = $(TRACER_HOME)/lib/full_trace.so
 LOGGER = $(TRACER_HOME)/lib/trace_logger.llvm
 GET_LABELED_STMTS = $(TRACER_HOME)/bin/get-labeled-stmts
 
-CPPFLAGS += -DTRACE_MODE -DDMA_MODE $(INCLUDES)
+CPPFLAGS += -DTRACE_MODE -DDMA_MODE -DARCHITECTURE=SMV -DTRANSPOSE_WEIGHTS=1 $(INCLUDES)
 LFLAGS += -lz -pthread
 
 ################################
@@ -27,11 +27,13 @@ LFLAGS += -lz -pthread
 
 LLVM_VERSION = $(shell clang --version | grep -o -m 1 "[0-9\.]\+" | head -n 1)
 GEM5_DMA_SRC = gem5/dma_interface.c
+MAIN_SRC = common/main.c
 
 # The file containinng the main function must be instrumented LAST so that it
 # can include all labels discovered by the clangtool. Therefore, we take it out
 # of this list and manually append it to the end.
-ALL_TRACER_SRCS = $(filter-out main.c, $(SRCS) $(GEM5_DMA_SRC)) main.c
+TRACER_SRCS = $(NATIVE_FULL_PATH_SRCS:cam_vision_pipe/src/%=%)
+ALL_TRACER_SRCS = $(filter-out $(MAIN_SRC), $(TRACER_SRCS) $(GEM5_DMA_SRC)) $(MAIN_SRC)
 $(info is [${ALL_TRACER_SRCS}])
 SUBBUILDDIRS = $(patsubst %, $(BUILD_DIR)/%, $(MODULES))
 
@@ -44,7 +46,7 @@ LLVM_OBJS = $(patsubst %.c, $(BUILD_DIR)/%-opt.llvm, $(ALL_TRACER_SRCS))
 build-trace: $(SUBBUILDDIRS) src-symlinks $(BUILD_DIR)/$(EXE)-instrumented
 
 src-symlinks:
-	cp -asf $(CURRENT_DIR)/../src/* build/
+	cp -asf $(CURRENT_DIR)/../cam_vision_pipe/src/* build/
 	cp -asf $(ALADDIN_HOME)/$(GEM5_DMA_SRC) $(BUILD_DIR)/$(GEM5_DMA_SRC)
 $(SUBBUILDDIRS):
 	mkdir -p $(SUBBUILDDIRS)
@@ -80,9 +82,9 @@ $(BUILD_DIR)/$(EXE)-instrumented: $(BUILD_DIR)/full.s
                                 -labelmapwriter -trace-all-callees -i $(BUILD_DIR)/labelmap \
                                 $*.llvm -o $*-opt.llvm
 clean-trace:
-	echo "Cleaning trace build products..."
-	rm -rf $(SUBBUILDDIRS)
-	cd $(BUILD_DIR) && rm -rf *.llvm *.h *.c *.s labelmap *-instrumented
-	rm -f dynamic_trace.gz
-	rm -f labelmap
-	rm -f output_labels.out
+	@echo "Cleaning trace build products..."
+	@rm -rf $(SUBBUILDDIRS)
+	@cd $(BUILD_DIR) && rm -rf *.llvm *.h *.c *.s labelmap *-instrumented
+	@rm -f dynamic_trace.gz
+	@rm -f labelmap
+	@rm -f output_labels.out
