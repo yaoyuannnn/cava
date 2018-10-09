@@ -19,3 +19,22 @@ To build and run a camera vision pipeline:
   cd sim
   sh run_native.sh
   ```
+
+# CAVA frontend — an ISP model #
+An Image Signal Processor (ISP) converts the raw pixels produced by camera sensors to useful images. The current ISP kernel is modeled after the Nikon-D7000 camera. It contains a five-stage camera pipeline. Namely, demosaicing, denoising, color space conversion/ white balancing, gamut mapping and tone mapping. The purpose and implementation of every pipeline stage is discussed as follows.
+
+## Demosaicing ##
+
+## Denosing ## 
+
+## Color space transform/ White balancing ##
+
+## Gamut mapping ##
+
+## Tone mapping ##
+
+# CAVA backend — a computer vision framework: SMAUG #
+
+
+# A walk through CAVA #
+The input for CAVA is a raw image. 
