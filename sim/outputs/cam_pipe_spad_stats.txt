@@ -1,0 +1,50 @@
+Array: acc_ctrl_pts, size = 1536, partitions = 4, word size = 8, reads = 0, writes = 192
+Array: acc_TsTw, size = 36, partitions = 4, word size = 1, reads = 0, writes = 36
+Array: acc_weights, size = 1536, partitions = 4, word size = 8, reads = 0, writes = 192
+Array: acc_result, size = 3072, partitions = 4, word size = 8, reads = 0, writes = 0
+Array: acc_tone_map, size = 3072, partitions = 4, word size = 8, reads = 0, writes = 384
+Array: acc_coefs, size = 48, partitions = 4, word size = 1, reads = 0, writes = 48
+Array: acc_input, size = 3072, partitions = 4, word size = 8, reads = 0, writes = 0
+Array: acc_input_scaled, size = 12288, partitions = 4, word size = 8, reads = 0, writes = 0
+Array: acc_result_scaled, size = 12288, partitions = 4, word size = 8, reads = 0, writes = 0
+===============
+Array: acc_ctrl_pts, size = 1536, partitions = 4, word size = 8, reads = 0, writes = 192
+Array: acc_TsTw, size = 36, partitions = 4, word size = 1, reads = 0, writes = 36
+Array: acc_weights, size = 1536, partitions = 4, word size = 8, reads = 0, writes = 192
+Array: acc_result, size = 3072, partitions = 4, word size = 8, reads = 0, writes = 0
+Array: acc_tone_map, size = 3072, partitions = 4, word size = 8, reads = 0, writes = 384
+Array: acc_coefs, size = 48, partitions = 4, word size = 1, reads = 0, writes = 48
+Array: acc_input, size = 3072, partitions = 4, word size = 8, reads = 0, writes = 0
+Array: acc_input_scaled, size = 12288, partitions = 4, word size = 3, reads = 0, writes = 0
+Array: acc_result_scaled, size = 12288, partitions = 4, word size = 3, reads = 0, writes = 0
+===============
+Array: acc_ctrl_pts, size = 1536, partitions = 4, word size = 4, reads = 0, writes = 384
+Array: acc_TsTw, size = 36, partitions = 1, word size = 4, reads = 0, writes = 9
+Array: acc_weights, size = 1536, partitions = 4, word size = 4, reads = 0, writes = 384
+Array: acc_result, size = 3072, partitions = 8, word size = 4, reads = 0, writes = 0
+Array: acc_tone_map, size = 3072, partitions = 8, word size = 4, reads = 0, writes = 768
+Array: acc_coefs, size = 48, partitions = 1, word size = 4, reads = 0, writes = 12
+Array: acc_input, size = 3072, partitions = 8, word size = 4, reads = 0, writes = 0
+Array: acc_input_scaled, size = 12288, partitions = 8, word size = 4, reads = 0, writes = 0
+Array: acc_result_scaled, size = 12288, partitions = 8, word size = 4, reads = 0, writes = 0
+===============
+Array: acc_ctrl_pts, size = 1536, partitions = 4, word size = 4, reads = 0, writes = 384
+Array: acc_TsTw, size = 36, partitions = 1, word size = 4, reads = 0, writes = 9
+Array: acc_weights, size = 1536, partitions = 4, word size = 4, reads = 0, writes = 384
+Array: acc_result, size = 3072, partitions = 8, word size = 1, reads = 0, writes = 0
+Array: acc_tone_map, size = 3072, partitions = 8, word size = 4, reads = 0, writes = 768
+Array: acc_coefs, size = 48, partitions = 1, word size = 4, reads = 0, writes = 12
+Array: acc_input, size = 3072, partitions = 8, word size = 1, reads = 0, writes = 0
+Array: acc_input_scaled, size = 12288, partitions = 8, word size = 4, reads = 0, writes = 0
+Array: acc_result_scaled, size = 12288, partitions = 8, word size = 4, reads = 0, writes = 0
+===============
+Array: acc_ctrl_pts, size = 1536, partitions = 4, word size = 4, reads = 0, writes = 384
+Array: acc_TsTw, size = 36, partitions = 1, word size = 4, reads = 9, writes = 9
+Array: acc_weights, size = 1536, partitions = 4, word size = 4, reads = 393216, writes = 384
+Array: acc_result, size = 3072, partitions = 8, word size = 1, reads = 3072, writes = 3072
+Array: acc_tone_map, size = 3072, partitions = 8, word size = 4, reads = 462, writes = 768
+Array: acc_coefs, size = 48, partitions = 1, word size = 4, reads = 12288, writes = 12
+Array: acc_input, size = 3072, partitions = 8, word size = 1, reads = 3072, writes = 3072
+Array: acc_input_scaled, size = 12288, partitions = 8, word size = 4, reads = 10238, writes = 405504
+Array: acc_result_scaled, size = 12288, partitions = 8, word size = 4, reads = 9216, writes = 8844
+===============

@@ -1,5 +1,6 @@
 DLEVEL ?= 0
-CFLAGS?=-O3 -Wall -Wno-unused-label -Wno-unused-but-set-variable \
+CFLAGS?=-O3 -Wall -Wno-psabi \
+        -Wno-unused-label -Wno-unused-but-set-variable \
         -Wno-maybe-uninitialized -DARCHITECTURE=SMV -DTRANSPOSE_WEIGHTS=1 \
         -DDEBUG_LEVEL=$(DLEVEL)
 LFLAGS += -lm -lconfuse -lrt
@@ -11,7 +12,7 @@ BUILD_DIR = build
 CURRENT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 COMMON_SRCS = common/main.c \
-	common/utility.c
+	      common/utility.c
 
 #
 # Source files for the frontend camera pipeline
@@ -83,7 +84,7 @@ SMV_ARCH_SRCS = arch/smv/activation_functions.c \
 
 NNET_LIB_SRCS = $(NNET_LIB_CORE_SRCS) $(NNET_LIB_UTILITY_SRCS) $(NNET_LIB_ARCH_SRCS)
 
-export WORKLOAD := smv_inner_product_layer_hw,smv_eltwise_hw,smv_convolution_layer_hw,activation_fun_fxp,smv_batch_norm_layer_hw,smv_pooling_layer_hw,smiv_decompress_packed_csr_hw,smv_dma_load_hw,smv_dma_store_hw
+export WORKLOAD=smv_inner_product_layer_hw,smv_eltwise_hw,smv_convolution_layer_hw,activation_fun_fxp,smv_batch_norm_layer_hw,smv_pooling_layer_hw,smiv_decompress_packed_csr_hw,smv_dma_load_hw,smv_dma_store_hw,load_cam_params_hw,isp_hw
 NNET_LIB_SRCS += $(SMV_ARCH_SRCS) $(SMIV_ARCH_SRCS)
 
 SRCS = $(COMMON_SRCS) $(CAM_PIPE_SRCS) $(NNET_LIB_SRCS)
@@ -113,5 +114,3 @@ LFLAGS += -L$(CONFUSE_ROOT)/lib
 endif
 
 EXE = cam-vision
-
-export WORKLOAD := load_cam_params_hw,isp_hw:$(WORKLOAD)

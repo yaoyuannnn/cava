@@ -5,8 +5,7 @@
 
 #define CHAN_SIZE 3
 
-#define ISP 0x3
-#define TRANSFORM 0x4
+#define ISP 0x4
 
 #define max(a,b) \
   ({ __typeof__ (a) _a = (a); \

@@ -1,0 +1,47 @@
+===============================
+        Aladdin Results        
+===============================
+Running : ./outputs/cam_pipe
+Top level function: load_cam_params_hw
+Cycle : 411 cycles
+Avg Power: 3.79082 mW
+Idle FU Cycles: 407 cycles
+Avg FU Power: 0.394498 mW
+Avg FU Dynamic Power: 0.00795423 mW
+Avg FU leakage Power: 0.386544 mW
+Avg MEM Power: 3.39632 mW
+Avg MEM Dynamic Power: 1.85789 mW
+Avg MEM Leakage Power: 1.53843 mW
+Total Area: 131804 uM^2
+FU Area: 33290.7 uM^2
+MEM Area: 98513.1 uM^2
+Num of Multipliers (32-bit): 1
+Num of Registers (32-bit): 3
+===============================
+        Aladdin Results        
+===============================
+===============================
+        Aladdin Results        
+===============================
+Running : ./outputs/cam_pipe
+Top level function: isp_hw
+Cycle : 408621 cycles
+Avg Power: 29.0524 mW
+Idle FU Cycles: 133167 cycles
+Avg FU Power: 26.2534 mW
+Avg FU Dynamic Power: 2.0929 mW
+Avg FU leakage Power: 24.1605 mW
+Avg MEM Power: 2.79897 mW
+Avg MEM Dynamic Power: 1.26054 mW
+Avg MEM Leakage Power: 1.53843 mW
+Total Area: 9.74317e+06 uM^2
+FU Area: 9.64466e+06 uM^2
+MEM Area: 98513.1 uM^2
+Num of Multipliers (32-bit): 2669
+Num of Adders (32-bit): 6540
+Num of Bit-wise Operators (32-bit): 5760
+Num of Shifters (32-bit): 1533
+Num of Registers (32-bit): 11552
+===============================
+        Aladdin Results        
+===============================

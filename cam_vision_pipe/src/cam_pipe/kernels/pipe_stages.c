@@ -34,9 +34,9 @@ void demosaic_fxp(float *input, int row_size, int col_size, float *result) {
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
 
-  dm_nn_row:
+  dm_row:
   for (int row = 1; row < row_size - 1; row++)
-    dm_nn_col:
+    dm_col:
     for (int col = 1; col < col_size - 1; col++)
         if (row % 2 == 0 && col % 2 == 0) {
             // Green pixel

@@ -6,19 +6,19 @@ GEM5_CPU = $(BUILD_DIR)/$(EXE)-gem5
 GEM5_ACCEL = $(BUILD_DIR)/$(EXE)-gem5-accel
 
 # -mno-sse
-GEM5_CFLAGS = -static -O3 -mno-80387 -msoft-float \
-              -march=nocona -msse -mfpmath=sse \
-              -fno-exceptions -fno-inline
+CFLAGS += -flax-vector-conversions -DGEM5 -DGEM5 -D__USE_F16C_ANYWAYS__
+GEM5_SIMD_CFLAGS = -msse3 -msse2 -mno-ssse3 -mno-sse4.1 -mno-sse4.2
+LFLAGS += -lz -pthread
 
-gem5-cpu: $(LOCAL_SRCS) $(GEM5_SRCS)
+gem5-cpu: $(NATIVE_FULL_PATH_SRCS) $(GEM5_FULL_PATH_SRCS)
 	@echo Building benchmark $(EXE) for gem5.
 	@mkdir -p $(BUILD_DIR)
-	@$(COMP) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -o $(GEM5_CPU) $^ $(LFLAGS)
+	@$(CC) $(CFLAGS) $(INCLUDES) -o $(GEM5_CPU) $^ $(LFLAGS)
 
-gem5-accel: $(LOCAL_SRCS) $(GEM5_SRCS)
+gem5-accel: $(NATIVE_FULL_PATH_SRCS) $(GEM5_FULL_PATH_SRCS)
 	@echo Building benchmark $(EXE) for gem5 with HW acceleration.
 	@mkdir -p $(BUILD_DIR)
-	@$(CC) $(GEM5_CFLAGS) $(CFLAGS) -DGEM5_HARNESS -DDMA_MODE -DDMA_INTERFACE_V3 $(INCLUDES) -o $(GEM5_ACCEL) $^ $(LFLAGS)
+	@$(CC) $(CFLAGS) $(GEM5_SIMD_CFLAGS) -DGEM5_HARNESS -DDMA_MODE -DDMA_INTERFACE_V3 $(INCLUDES) -o $(GEM5_ACCEL) $^ $(LFLAGS)
 
 clean-gem5:
 	@rm -rf $(BUILD_DIR)/*-gem5

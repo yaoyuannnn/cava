@@ -1,6 +1,6 @@
 include common/Makefile.common
 
-MODULES = cam_pipe/kernels cam_pipe/utility nnet_lib/core nnet_lib/utility nnet_lib/arch gem5
+MODULES = cam_pipe nnet_lib/core nnet_lib/utility nnet_lib/arch gem5
 
 .PHONY: dma-trace-binary run-trace clean-trace src-symlinks
 
@@ -34,7 +34,6 @@ MAIN_SRC = common/main.c
 # of this list and manually append it to the end.
 TRACER_SRCS = $(NATIVE_FULL_PATH_SRCS:cam_vision_pipe/src/%=%)
 ALL_TRACER_SRCS = $(filter-out $(MAIN_SRC), $(TRACER_SRCS) $(GEM5_DMA_SRC)) $(MAIN_SRC)
-$(info is [${ALL_TRACER_SRCS}])
 SUBBUILDDIRS = $(patsubst %, $(BUILD_DIR)/%, $(MODULES))
 
 LLVM_OBJS = $(patsubst %.c, $(BUILD_DIR)/%-opt.llvm, $(ALL_TRACER_SRCS))
@@ -46,31 +45,31 @@ LLVM_OBJS = $(patsubst %.c, $(BUILD_DIR)/%-opt.llvm, $(ALL_TRACER_SRCS))
 build-trace: $(SUBBUILDDIRS) src-symlinks $(BUILD_DIR)/$(EXE)-instrumented
 
 src-symlinks:
-	cp -asf $(CURRENT_DIR)/../cam_vision_pipe/src/* build/
-	cp -asf $(ALADDIN_HOME)/$(GEM5_DMA_SRC) $(BUILD_DIR)/$(GEM5_DMA_SRC)
+	@cp -asf $(CURRENT_DIR)/../cam_vision_pipe/src/* build/
+	@cp -asf $(ALADDIN_HOME)/$(GEM5_DMA_SRC) $(BUILD_DIR)/$(GEM5_DMA_SRC)
 $(SUBBUILDDIRS):
-	mkdir -p $(SUBBUILDDIRS)
+	@mkdir -p $(SUBBUILDDIRS)
 
 %-labelmap: %.c
-	$(GET_LABELED_STMTS) $^ -- \
+	@$(GET_LABELED_STMTS) $^ -- \
                         -I$(LLVM_HOME)/lib/clang/$(LLVM_VERSION)/include \
-                        $(CPPFLAGS) -mf16c $(BMARK_SPECIFIC_CFLAGS)
-	cat labelmap >> $(BUILD_DIR)/labelmap
+                        $(CPPFLAGS) -mf16c -DDMA_INTERFACE_V3 \
+	@cat labelmap >> $(BUILD_DIR)/labelmap
 
 $(BUILD_DIR)/full.llvm: $(LLVM_OBJS)
-	echo Linking instrumented LLVM objects...
-	llvm-link -o $@ $^ $(LOGGER)
+	@echo Linking instrumented LLVM objects...
+	@llvm-link -o $@ $^ $(LOGGER)
 
 $(BUILD_DIR)/full.s: $(BUILD_DIR)/full.llvm
-	llc -O0 -disable-fp-elim -filetype=asm -o $@ $<
+	@llc -O0 -disable-fp-elim -filetype=asm -o $@ $<
 
 $(BUILD_DIR)/$(EXE)-instrumented: $(BUILD_DIR)/full.s
-	echo Producing final binary...
-	$(CC) -g -O0 -fno-inline -o $@ $^ $(LFLAGS)
+	@echo Producing final binary...
+	@$(CC) -g -O0 -fno-inline -o $@ $^ $(LFLAGS)
 
 %-opt.llvm: %.c %-labelmap
-	echo Building $<
-	clang -g -O1 -S -fno-slp-vectorize -fno-vectorize -fno-unroll-loops \
+	@echo Building $<
+	@clang -g -O1 -S -fno-slp-vectorize -fno-vectorize -fno-unroll-loops \
         -fno-inline -fno-builtin \
                                 -mavx \
                                 -mf16c \
@@ -78,7 +77,7 @@ $(BUILD_DIR)/$(EXE)-instrumented: $(BUILD_DIR)/full.s
                                 $(CPPFLAGS) \
         -DDMA_INTERFACE_V3 \
         -o $*.llvm $<
-	opt -S -load=$(TRACER) -fulltrace \
+	@opt -S -load=$(TRACER) -fulltrace \
                                 -labelmapwriter -trace-all-callees -i $(BUILD_DIR)/labelmap \
                                 $*.llvm -o $*-opt.llvm
 clean-trace:

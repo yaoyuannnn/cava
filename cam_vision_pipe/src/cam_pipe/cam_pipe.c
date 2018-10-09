@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include "kernels/pipe_stages.h"
 #include "utility/load_cam_model.h"
@@ -13,7 +14,7 @@
 ///////////////////////////////////////////////////////////////
 
 // Path to the camera model to be used
-char cam_model_path[] = "cam_vision_pipe/cam_models/NikonD7000/";
+char cam_model_path[100];
 
 // White balance index (select white balance from transform file)
 // The first white balance in the file has a wb_index of 1
@@ -21,7 +22,7 @@ char cam_model_path[] = "cam_vision_pipe/cam_models/NikonD7000/";
 int wb_index = 6;
 
 // Number of control points
-int num_ctrl_pts = 3702;
+int num_ctrl_pts = 128;
 
 void load_cam_params_hw(float *host_TsTw, float *host_ctrl_pts,
                         float *host_weights, float *host_coefs,
@@ -65,6 +66,14 @@ void cam_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
   float *acc_input_scaled, *acc_result_scaled;
   float *host_TsTw, *host_ctrl_pts, *host_weights, *host_coefs, *host_tone_map;
   float *acc_TsTw, *acc_ctrl_pts, *acc_weights, *acc_coefs, *acc_tone_map, *acc_l2_dist;
+
+  const char* cava_home = getenv("CAVA_HOME");
+  if (cava_home == NULL) {
+      fprintf(stderr, "CAVA_HOME returned NULL\n");
+      exit(1);
+  }
+  strcat(cam_model_path, cava_home);
+  strcat(cam_model_path, "/cam_vision_pipe/cam_models/NikonD7000/");
 
   host_TsTw = get_TsTw(cam_model_path, wb_index);
   float *trans = transpose_mat(host_TsTw, CHAN_SIZE, CHAN_SIZE);
