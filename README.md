@@ -8,8 +8,6 @@ to work with gem5-Aladdin. It consists of two parts: an ISP and a DNN framework
 In SMAUG, several reference implementations are provided, along with a
 model of an actual SoC containing multiple DNN accelerators.
 
-# Overview #
-
 ## Getting started ##
 
 To build and run a camera vision pipeline:
@@ -20,21 +18,21 @@ To build and run a camera vision pipeline:
   sh run_native.sh
   ```
 
-# CAVA frontend — an ISP model #
+## CAVA frontend — an ISP model ##
 An Image Signal Processor (ISP) converts the raw pixels produced by camera sensors to useful images. The current ISP kernel is modeled after the Nikon-D7000 camera. It contains a five-stage camera pipeline. Namely, demosaicing, denoising, color space conversion/ white balancing, gamut mapping and tone mapping. The purpose and implementation of every pipeline stage is discussed as follows.
 
-## Demosaicing ##
+### Demosaicing ###
 
-## Denosing ## 
+### Denosing ###
 
-## Color space transform/ White balancing ##
+### Color space transform/ White balancing ###
 
-## Gamut mapping ##
+### Gamut mapping ###
 
-## Tone mapping ##
+### Tone mapping ###
 
-# CAVA backend — a computer vision framework: SMAUG #
+## CAVA backend — a computer vision framework: SMAUG ##
 
 
-# A walk through CAVA #
+## A walk through CAVA ##
 The input for CAVA is a raw image. 
