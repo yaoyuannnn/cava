@@ -59,20 +59,81 @@ To build and run the default camera vision pipeline:
   ```
 
 ## CAVA frontend — an ISP model ##
-An Image Signal Processor (ISP) converts the raw pixels produced by camera sensors to useful images. The current ISP kernel is modeled after the [Nikon-D7000 camera](https://en.wikipedia.org/wiki/Nikon_D7000). It contains a five-stage camera pipeline. Namely, demosaicing, denoising, color space conversion / white balancing, gamut mapping and tone mapping. The purpose and implementation of every pipeline stage is discussed as follows.
+An *Image Signal Processor (ISP)* converts the raw pixels produced by camera
+sensors to useful images. 
+
+The default ISP kernel is modeled after the [Nikon-D7000
+camera](https://en.wikipedia.org/wiki/Nikon_D7000). It contains a five-stage
+camera pipeline: 
+
+1. Demosaicing
+2. Denoising
+3. Color space conversion / white balancing
+4. Gamut mapping
+5. Tone mapping
+
+The purpose and implementation of every pipeline stage is discussed as follows.
+
+See `cam_vision_pipe/src/cam_pipe/kernels/pipe_stages.c` for implementation
+details.
 
 ### Demosaicing ###
 
-### Denosing ###
+Filters using a _color filter array_ (CFA) over each photosite of a sensor to
+interpolate local undersampled colors into a true color at the pixel. A common
+CFA is known as the _Bayer filter_, which contains more green than red and blue
+pixels due to the imbalance in human perception. The filter operation yields a
+"mosaic" of RGB pixels with intensities.
 
-### Color space transform/ White balancing ###
+Also known as _debayering_, _CFA interpolation_, or _color reconstruction_.
 
-### Gamut mapping ###
+### Denoising ###
 
-### Tone mapping ###
+There are many algorithms for denoising, which aims to reduce the level of
+noise in the image. The default ISP kernel implements a local nonlinear
+interpolation.
+
+### Color Space Transform / White Balancing ###
+
+To perform color balancing, we multiply the RGB color value at each point with
+a 3x3 diagonal matrix whose values are configurable.
+
+### Gamut Mapping ###
+
+A _gamut_ is the set of colors which fully represents some scenario, whether an
+image, a color space, or the capability of a particular output device. 
+
+For example, preparing an image for printing requires gamut mapping. This is
+because the image is often specified in RGB, whereas the printer expects the
+CMYK color space. Gamut mapping performs this transformation from RGB to CMYK
+so that the image is most faithfully realized in print.
+
+The gamut mapping stage here computes the L2-norm to a set of control points,
+weights them, and adds bias for a radial basis function (RBF).
+
+### Tone Mapping ###
+
+Tone mapping approximates images with a higher dynamic range than the output
+device. The process must preserve colors and other aspects of the original
+image while seeking to squeeze the presumably stronger contrast of the original
+image into the feasible range of the output device.
+
+For example, an HDR image may be the result of capturing multiple exposures
+which together approximate the luminance of the original scene. The tone
+mapping operator then squeezes this into the lower dynamic range of an output
+device such as a monitor. Although such approximations may produce unusual
+artifacts, they preserve image features and often retain a pleasant balance
+between global contrast and local contrast.
+
+There are a variety of availability _tone mapping operators_ (TMOs), which may
+be either global or local.
+
+This is sometimes called _color reproduction_ or _color processing_.
 
 ## CAVA backend — a computer vision framework: SMAUG ##
 
+SMAUG is a framework for deep neural networks (DNNs), together with reference
+implementations that include a model of an SoC with multiple DNN accelerators.
 
 ## A walk through CAVA ##
 The input for CAVA is a raw image. 
