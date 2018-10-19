@@ -71,13 +71,13 @@ The default ISP kernel is modeled after the [Nikon-D7000
 camera](https://en.wikipedia.org/wiki/Nikon_D7000*). It contains a five-stage
 camera pipeline: 
 
-1. Demosaicing: _Interpolate_ undersampled sensors to produce a mosaic of RGB
+1. **Demosaicing:** _Interpolate_ undersampled sensors to produce a mosaic of RGB
    pixel intensities
-2. Denoising: Reduce _noise_ in image
-3. Color Space Conversion / White Balancing: Preserve _neutrality_ of neutral colors
-4. Gamut mapping: Map to restricted _available colors_ of output device without
+2. **Denoising:** Reduce _noise_ in image
+3. **Color Space Conversion / White Balancing:** Preserve _neutrality_ of neutral colors
+4. **Gamut Mapping:** Map to restricted _available colors_ of output device without
    compromising the original image
-5. Tone mapping: Map to restricted _dynamic range_ of output device without
+5. **Tone Mapping:** Map to restricted _dynamic range_ of output device without
    compromising the original image
 
 The purpose and implementation of every pipeline stage is discussed in more
