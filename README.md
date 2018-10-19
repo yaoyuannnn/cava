@@ -1,16 +1,20 @@
 # CAVA: Camera Vision Pipeline on gem5-Aladdin
-==================================================================
 
-CAVA is a library for building and simulating camera vision pipelines, written
-to work with gem5-Aladdin. It consists of two parts: an ISP and a DNN framework
-(SMAUG).
+CAVA is a library for building and simulating _camera vision pipelines_.
+It is written to work with the gem5-aladdin SoC simulator. 
 
-In SMAUG, several reference implementations are provided, along with a
-model of an actual SoC containing multiple DNN accelerators.
+CAVA consists of two parts:
+1. An *Image Signal Processor (ISP)* (a configurable five-stage pipeline)
+2. A DNN framework (*SMAUG*). 
+
+In SMAUG, several reference implementations are provided, along with a model of
+an actual SoC containing multiple DNN accelerators.
 
 ## Getting started ##
 
-### Clone CAVA repository
+We will install CAVA's dependencies, then build and run it on a simple example.
+
+### Clone the CAVA repository
 
   ```bash
   git clone git@github.com:yaoyuannnn/cava.git
@@ -58,12 +62,12 @@ To build and run the default camera vision pipeline:
   sh run_native.sh
   ```
 
-## CAVA frontend — an ISP model ##
+## The CAVA Frontend – An ISP Model
 An *Image Signal Processor (ISP)* converts the raw pixels produced by camera
 sensors to useful images. 
 
 The default ISP kernel is modeled after the [Nikon-D7000
-camera](https://en.wikipedia.org/wiki/Nikon_D7000). It contains a five-stage
+camera](https://en.wikipedia.org/wiki/Nikon_D7000*). It contains a five-stage
 camera pipeline: 
 
 1. Demosaicing
@@ -130,10 +134,11 @@ be either global or local.
 
 This is sometimes called _color reproduction_ or _color processing_.
 
-## CAVA backend — a computer vision framework: SMAUG ##
+## The CAVA Backend — A Computer Vision Framework: SMAUG ##
 
-SMAUG is a framework for deep neural networks (DNNs), together with reference
+*SMAUG* is a framework for deep neural networks (DNNs), together with reference
 implementations that include a model of an SoC with multiple DNN accelerators.
 
 ## A walk through CAVA ##
+
 The input for CAVA is a raw image. 
