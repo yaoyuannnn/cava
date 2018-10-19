@@ -12,11 +12,11 @@ model of an actual SoC containing multiple DNN accelerators.
 
 ### Clone CAVA repository
 
-These example commands happen to use HTTPS, not SSH, but either is fine.
-
   ```bash
-  git clone https://github.com/yaoyuannnn/cava.git
+  git clone git@github.com:yaoyuannnn/cava.git
   ```
+
+(Note that we have included the SSH URL for the repository, not the HTTPS one.)
 
 ### Install gem5-aladdin
 
@@ -24,7 +24,7 @@ In the same directory that you cloned CAVA, clone the gem5-aladdin repository.
 
   ```bash
   # recursively clone aladdin and xenon dependencies
-  git clone --recursive https://github.com/harvard-acc/gem5-aladdin.git
+  git clone --recursive git@github.com:harvard-acc/gem5-aladdin.git
   ```
 
 After the aladdin repository has been recursively cloned into the
