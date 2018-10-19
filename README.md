@@ -1,7 +1,8 @@
 # CAVA: Camera Vision Pipeline on gem5-Aladdin
 
-CAVA is a library for building and simulating _camera vision pipelines_.
-It is written to work with the gem5-aladdin SoC simulator. 
+CAVA is a library for building and simulating _camera vision pipelines_.  It is
+written to work with the
+[gem5-aladdin](https://github.com/harvard-acc/gem5-aladdin) SoC simulator. 
 
 CAVA consists of two parts:
 1. An *Image Signal Processor (ISP)* (a configurable five-stage pipeline)
@@ -39,9 +40,9 @@ when building if you forget to set it.
 
 ### Install libconfuse
 
-CAVA depends on (`libconfuse`)[https://github.com/martinh/libconfuse] for
-reading its configuration files. For example, you can install it on Ubuntu
-with:
+CAVA depends on [`libconfuse`](https://github.com/martinh/libconfuse) for
+reading its configuration files. For example, you can [install it on
+Ubuntu](https://packages.ubuntu.com/search?keywords=libconfuse-dev) with:
 
   ```bash
   apt-get install libconfuse-dev
@@ -70,16 +71,18 @@ The default ISP kernel is modeled after the [Nikon-D7000
 camera](https://en.wikipedia.org/wiki/Nikon_D7000*). It contains a five-stage
 camera pipeline: 
 
-1. Demosaicing
-2. Denoising
-3. Color space conversion / white balancing
-4. Gamut mapping
-5. Tone mapping
+1. Demosaicing: _Interpolate_ undersampled sensors to produce a mosaic of RGB
+   pixel intensities
+2. Denoising: Reduce _noise_ in image
+3. Color Space Conversion / White Balancing: Preserve _neutrality_ of neutral colors
+4. Gamut mapping: Map to restricted _available colors_ of output device without
+   compromising the original image
+5. Tone mapping: Map to restricted _dynamic range_ of output device without
+   compromising the original image
 
-The purpose and implementation of every pipeline stage is discussed as follows.
-
-See `cam_vision_pipe/src/cam_pipe/kernels/pipe_stages.c` for implementation
-details.
+The purpose and implementation of every pipeline stage is discussed in more
+detail as follows. See `cam_vision_pipe/src/cam_pipe/kernels/pipe_stages.c` for
+the corresponding implementation details.
 
 ### Demosaicing ###
 
