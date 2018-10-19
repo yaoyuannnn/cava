@@ -4,6 +4,7 @@ CAVA is a library for building and simulating _camera vision pipelines_.  It is
 written to work with the
 [gem5-aladdin](https://github.com/harvard-acc/gem5-aladdin) SoC simulator. 
 
+
 CAVA consists of two parts:
 1. An *Image Signal Processor (ISP)* (a configurable five-stage pipeline)
 2. A DNN framework (*SMAUG*). 
@@ -14,6 +15,10 @@ an actual SoC containing multiple DNN accelerators.
 ## Getting started ##
 
 We will install CAVA's dependencies, then build and run it on a simple example.
+
+We have tested it only on Linux, but theoretically it should work wherever you
+can run gem5-aladdin. Let us know if you encounter any issues building or
+executing on other systems.
 
 ### Clone the CAVA repository
 
@@ -132,7 +137,7 @@ device such as a monitor. Although such approximations may produce unusual
 artifacts, they preserve image features and often retain a pleasant balance
 between global contrast and local contrast.
 
-There are a variety of availability _tone mapping operators_ (TMOs), which may
+There are a variety of available _tone mapping operators_ (TMOs), which may
 be either global or local.
 
 This is sometimes called _color reproduction_ or _color processing_.
