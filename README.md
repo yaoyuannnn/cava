@@ -20,11 +20,36 @@ We have tested it only on Linux, but theoretically it should work wherever you
 can run gem5-aladdin. Let us know if you encounter any issues building or
 executing on other systems.
 
+## Dependencies
+
+### Install libconfuse
+
+CAVA depends on [`libconfuse`](https://github.com/martinh/libconfuse) for
+reading its configuration files. For example, you can [install it on
+Ubuntu](https://packages.ubuntu.com/search?keywords=libconfuse-dev) with:
+
+  ```bash
+  apt-get install libconfuse-dev
+  ```
+
+### (Optional) Install imageio
+
+The `scripts/load_and_convert.py` script converts between raw images and binary
+arrays. If you want to use this script, you will need to install the
+[imageio](https://imageio.readthedocs.io/en/stable/installation.html) library.
+
+  ```bash
+  pip install imageio
+  ```
+
 ### Clone the CAVA repository
 
   ```bash
   git clone git@github.com:yaoyuannnn/cava.git
   ```
+
+Set the environment variable `$CAVA_HOME` to the cloned directory. (This is
+used in `cava/cam_vision_pipe/src/common/main.c`).
 
 (Note that we have included the SSH URL for the repository, not the HTTPS one.)
 
@@ -42,16 +67,6 @@ After the aladdin repository has been recursively cloned into the
 to the path `gem5-aladdin/src/aladdin` within gem5-aladdin. This environment
 variable determines the paths in the build files, so you will see some errors
 when building if you forget to set it.
-
-### Install libconfuse
-
-CAVA depends on [`libconfuse`](https://github.com/martinh/libconfuse) for
-reading its configuration files. For example, you can [install it on
-Ubuntu](https://packages.ubuntu.com/search?keywords=libconfuse-dev) with:
-
-  ```bash
-  apt-get install libconfuse-dev
-  ```
 
 ### Build and Run
 
