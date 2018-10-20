@@ -7,7 +7,7 @@ import struct
 
 def convert_raw_to_binary(raw_name):
     im = imageio.imread(raw_name)
-    print im.shape
+    print(im.shape)
     #for i in xrange(im.shape[0]):
     #  for j in xrange(im.shape[1]):
     #      print '(',
