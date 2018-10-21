@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 
-# Runs camera/vision pipeline on a target image file.
-# Converts input.png to result.png.
+# Runs camera/vision pipeline on a target raw image.
+# Requires a RAW image as input (not a PNG/JPG/etc.).
 
-input_image=input.png
 
 top_level=`git rev-parse --show-toplevel`
 bin_path=${top_level}/build/cam-vision-native
 load_and_convert=${top_level}/scripts/load_and_convert.py 
 
+# We are using a preprocessed raw input image.
+#raw_input_image=N/A
 output_image_name=result
-raw_input_image=${input_image}
-binary_input_image=input.bin
+binary_input_image=raw_32x32.bin
 binary_output_image=${output_image_name}.bin
 
 # Convert raw image to binary.
-${load_and_convert} -r ${raw_input_image}
+#${load_and_convert} -r ${raw_input_image}
 
 # Run camera pipeline on binary, then DNN using specified configuration.
 ${bin_path} ${binary_input_image} ${binary_output_image} test.conf
