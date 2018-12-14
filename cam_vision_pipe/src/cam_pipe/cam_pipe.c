@@ -22,7 +22,7 @@ char cam_model_path[100];
 int wb_index = 6;
 
 // Number of control points
-int num_ctrl_pts = 128;
+int num_ctrl_pts = 3702;
 
 void load_cam_params_hw(float *host_TsTw, float *host_ctrl_pts,
                         float *host_weights, float *host_coefs,
