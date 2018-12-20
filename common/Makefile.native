@@ -15,15 +15,15 @@ debug-verbose: DLEVEL=3
 CFLAGS += -mf16c -flax-vector-conversions
 LFLAGS += -pthread
 
-$(NATIVE): $(NATIVE_FULL_PATH_SRCS) $(GEM5_FULL_PATH_SRCS)
+$(NATIVE): $(NATIVE_FULL_PATH_SRCS)
 	@echo Building benchmark for native machine.
 	@mkdir -p $(BUILD_DIR)
 	@$(CC) $(CFLAGS) $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(NATIVE) $^ $(LFLAGS)
 
-$(DEBUG): $(NATIVE_FULL_PATH_SRCS) $(GEM5_FULL_PATH_SRCS)
+$(DEBUG): $(NATIVE_FULL_PATH_SRCS)
 	@echo Building benchmark for native machine with debug support.
 	@mkdir -p $(BUILD_DIR)
-	@$(CC) $(CFLAGS) -ggdb3 $(INCLUDES) -DGEM5 -DDMA_MODE -DDMA_INTERFACE_V3 -o $(DEBUG) $^ $(LFLAGS)
+	@$(CC) $(CFLAGS) -ggdb3 $(INCLUDES) -DDMA_MODE -DDMA_INTERFACE_V3 -o $(DEBUG) $^ $(LFLAGS)
 
 run:
 	./build/$(NATIVE) raw.bin result.bin

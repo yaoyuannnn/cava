@@ -12,7 +12,8 @@ BUILD_DIR = build
 CURRENT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 COMMON_SRCS = common/main.c \
-	      common/utility.c
+	      common/utility.c \
+              gem5/dma_interface.c
 
 #
 # Source files for the frontend camera pipeline
@@ -100,10 +101,8 @@ NATIVE_FULL_PATH_SRCS += $(patsubst %, $(NNET_LIB_SRC_DIR)/%, $(NNET_LIB_SRCS))
 # GEM5_FULL_PATH_SRCS contains all the full path source files for the gem5 files.
 GEM5_FULL_PATH_SRCS = $(patsubst %, $(ALADDIN_HOME)/%, $(GEM5_DMA_SRC) $(GEM5_SYS_SRCS) $(GEM5_UTIL_SRCS))
 
-INCLUDES += -I$(ALADDIN_HOME) \
-	    -I$(ALADDIN_HOME)/../../include \
-	    -I$(ALADDIN_HOME)/gem5 \
-            -I$(SRC_DIR) \
+INCLUDES += -I$(SRC_DIR) \
+            -I$(SRC_DIR)/gem5 \
             -I$(CAM_PIPE_SRC_DIR) \
             -I$(NNET_LIB_SRC_DIR) \
             -I$(NNET_LIB_SRC_DIR)/third_party/FP16/include
