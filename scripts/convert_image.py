@@ -46,6 +46,7 @@ def descale(input_im, output_im):
         output_im[row][col][chan] = input_im[row][col][chan] * 255
 
 def remosaic(input_im, output_im):
+  print "Remosaicing."
   for y in xrange(input_im.shape[0]):
     for x in xrange(input_im.shape[1]):
       # If an even row
@@ -82,6 +83,7 @@ def remosaic(input_im, output_im):
           output_im[y][x][1] = input_im[y][x][1] / 2
 
 def renoise(input_im, output_im):
+  print "Renoising."
   temp_im = np.ndarray(shape=input_im.shape, dtype=np.uint8)
   descale(input_im, temp_im)
   row,col,ch= input_im.shape
@@ -94,6 +96,7 @@ def renoise(input_im, output_im):
   scale(temp_im, output_im)
 
 def reverse_color_transform(input_im, wb_index, output_im):
+  print "Reverse color mapping."
   tr = np.ndarray(shape=(3, 3), dtype=float)
   with open("../cam_vision_pipe/cam_models/NikonD7000/jpg2raw_transform.txt", "r") as tr_file:
     wb_base = 5 + 5*(wb_index-1)
@@ -112,6 +115,7 @@ def reverse_color_transform(input_im, wb_index, output_im):
                 0);
 
 def reverse_gamut_map(input_im, num_cps, output_im):
+  print "Reverse gamut mapping."
   gm_cp = np.ndarray(shape=(num_cps, 3), dtype=float)
   gm_weight = np.ndarray(shape=(num_cps, 3), dtype=float)
   gm_coef = np.ndarray(shape=(4, 3), dtype=float)
@@ -130,8 +134,8 @@ def reverse_gamut_map(input_im, num_cps, output_im):
 
   l2_dist = np.zeros(num_cps)
   for row in xrange(input_im.shape[0]):
-    print "row =",
-    print row
+    if row % 10 == 0:
+      print "%d / %d" % (row, input_im.shape[0])
     for col in xrange(input_im.shape[1]):
       for cp in xrange(num_cps):
         l2_dist[cp] = \
@@ -153,6 +157,7 @@ def reverse_gamut_map(input_im, num_cps, output_im):
                                    gm_coef[3][chan] * input_im[row][col][2];
 
 def reverse_tone_map(input_im, output_im):
+  print "Reverse tone mapping."
   tm_resp_func = np.ndarray(shape=(256,3), dtype=float)
   with open("../cam_vision_pipe/cam_models/NikonD7000/jpg2raw_respFcns.txt", "r") as tm_file:
     tm_data = tm_file.read().splitlines(True)[1:]
