@@ -53,32 +53,33 @@ def remosaic(input_im, output_im):
         # If an even column
         if x % 2 == 0:
           # Green pixel, remove blue and red
-          output_im[y][x][0] = 0
           output_im[y][x][2] = 0
+          output_im[y][x][0] = 0
           # Also divide the green by half to account
           # for interpolation reversal
           output_im[y][x][1] = input_im[y][x][1] / 2
         # If an odd column
         else:
           # Red pixel, remove blue and green
-          output_im[y][x][0] = 0
+          output_im[y][x][2] = 0
           output_im[y][x][1] = 0
+          output_im[y][x][0] = input_im[y][x][0]
       # If an odd row
       else:
         # If an even column
         if x % 2 == 0:
           # Blue pixel, remove red and green
-          output_im[y][x][2] = 0
+          output_im[y][x][0] = 0
           output_im[y][x][1] = 0
+          output_im[y][x][2] = input_im[y][x][2]
         # If an odd column
         else:
           # Green pixel, remove blue and red
-          output_im[y][x][0] = 0
           output_im[y][x][2] = 0
+          output_im[y][x][0] = 0
           # Also divide the green by half to account
           # for interpolation reversal
           output_im[y][x][1] = input_im[y][x][1] / 2
-
 
 def renoise(input_im, output_im):
   temp_im = np.ndarray(shape=input_im.shape, dtype=np.uint8)
@@ -91,33 +92,6 @@ def renoise(input_im, output_im):
   gauss = gauss.reshape(row,col,ch)
   temp_im = temp_im + gauss
   scale(temp_im, output_im)
-
-def renoise1(input_im, output_im):
-  red_a   =  0.1460
-  red_b   =  7.6876
-  green_a =  0.1352
-  green_b =  5.0834
-  blue_a  =  0.1709
-  blue_b  = 12.3381
-
-  for y in xrange(input_im.shape[0]):
-    for x in xrange(input_im.shape[1]):
-      # Compute the channel noise standard deviation
-      red_std = math.sqrt(red_a * input_im[y][x][2] + red_b)
-      green_std = math.sqrt(green_a * input_im[y][x][1] + green_b)
-      blue_std = math.sqrt(blue_a * input_im[y][x][0] + blue_b)
-
-      # Blue channel
-      print red_std, green_std, blue_std
-      output_im[y][x][0] = input_im[y][x][0] + np.random.normal(0, blue_std)
-      ## Green channel
-      output_im[y][x][1] = input_im[y][x][1] + np.random.normal(0, green_std)
-      ## Red channel
-      output_im[y][x][2] = input_im[y][x][2] + np.random.normal(0, red_std)
-      print output_im[y][x][0] - input_im[y][x][0],
-      print output_im[y][x][1] - input_im[y][x][1],
-      print output_im[y][x][2] - input_im[y][x][2]
-      exit(0)
 
 def reverse_color_transform(input_im, wb_index, output_im):
   tr = np.ndarray(shape=(3, 3), dtype=float)
@@ -177,7 +151,6 @@ def reverse_gamut_map(input_im, num_cps, output_im):
                                    gm_coef[1][chan] * input_im[row][col][0] + \
                                    gm_coef[2][chan] * input_im[row][col][1] + \
                                    gm_coef[3][chan] * input_im[row][col][2];
-
 
 def reverse_tone_map(input_im, output_im):
   tm_resp_func = np.ndarray(shape=(256,3), dtype=float)
