@@ -6,6 +6,7 @@ import imageio
 import struct
 import math
 import random
+import cmodule
 
 def convert_raw_to_binary(raw_name):
     im = imageio.imread(raw_name)
@@ -34,16 +35,10 @@ def convert_binary_to_image(bin_name):
 # Functions for reverting an image to a raw image
 #------------------------------------------------------------
 def scale(input_im, output_im):
-  for row in xrange(input_im.shape[0]):
-    for col in xrange(input_im.shape[1]):
-      for chan in xrange(3):
-        output_im[row][col][chan] = float(input_im[row][col][chan]) / 255
+  np.copyto(output_im, np.divide(input_im, 255.0))
 
 def descale(input_im, output_im):
-  for row in xrange(input_im.shape[0]):
-    for col in xrange(input_im.shape[1]):
-      for chan in xrange(3):
-        output_im[row][col][chan] = input_im[row][col][chan] * 255
+  np.copyto(output_im, np.multiply(input_im, 255).astype(np.uint8))
 
 def remosaic(input_im, output_im):
   print "Remosaicing."
@@ -97,7 +92,7 @@ def renoise(input_im, output_im):
 
 def reverse_color_transform(input_im, wb_index, output_im):
   print "Reverse color mapping."
-  tr = np.ndarray(shape=(3, 3), dtype=float)
+  tr = np.ndarray(shape=(3, 3), dtype=np.float32)
   with open("../cam_vision_pipe/cam_models/NikonD7000/jpg2raw_transform.txt", "r") as tr_file:
     wb_base = 5 + 5*(wb_index-1)
     tr_data = tr_file.read().splitlines(True)[wb_base:wb_base+3]
@@ -116,9 +111,9 @@ def reverse_color_transform(input_im, wb_index, output_im):
 
 def reverse_gamut_map(input_im, num_cps, output_im):
   print "Reverse gamut mapping."
-  gm_cp = np.ndarray(shape=(num_cps, 3), dtype=float)
-  gm_weight = np.ndarray(shape=(num_cps, 3), dtype=float)
-  gm_coef = np.ndarray(shape=(4, 3), dtype=float)
+  gm_cp = np.ndarray(shape=(num_cps, 3), dtype=np.float32)
+  gm_weight = np.ndarray(shape=(num_cps, 3), dtype=np.float32)
+  gm_coef = np.ndarray(shape=(4, 3), dtype=np.float32)
   with open("../cam_vision_pipe/cam_models/NikonD7000/jpg2raw_ctrlPoints.txt", "r") as gm_cp_file:
     gm_cp_data = gm_cp_file.read().splitlines(True)[1:]
     for i,line in enumerate(gm_cp_data):
@@ -132,33 +127,12 @@ def reverse_gamut_map(input_im, num_cps, output_im):
       else:
         gm_coef[i-num_cps] = line.split()
 
-  l2_dist = np.zeros(num_cps)
-  for row in xrange(input_im.shape[0]):
-    if row % 10 == 0:
-      print "%d / %d" % (row, input_im.shape[0])
-    for col in xrange(input_im.shape[1]):
-      for cp in xrange(num_cps):
-        l2_dist[cp] = \
-            math.sqrt((input_im[row][col][0] - gm_cp[cp][0]) * \
-                     (input_im[row][col][0] - gm_cp[cp][0]) + \
-                 (input_im[row][col][1] - gm_cp[cp][1]) * \
-                     (input_im[row][col][1] - gm_cp[cp][1]) + \
-                 (input_im[row][col][2] - gm_cp[cp][2]) * \
-                     (input_im[row][col][2] - gm_cp[cp][2]));
-
-      for chan in xrange(3):
-        output_im[row][col][chan] = 0.0;
-        for cp in xrange(num_cps):
-          output_im[row][col][chan] += \
-              l2_dist[cp] * gm_weight[cp][chan];
-        output_im[row][col][chan] += gm_coef[0][chan] + \
-                                   gm_coef[1][chan] * input_im[row][col][0] + \
-                                   gm_coef[2][chan] * input_im[row][col][1] + \
-                                   gm_coef[3][chan] * input_im[row][col][2];
+  # Use the external C++ implementation for better performance.
+  cmodule.rev_gamut_map(input_im, output_im, gm_cp, gm_weight, gm_coef)
 
 def reverse_tone_map(input_im, output_im):
   print "Reverse tone mapping."
-  tm_resp_func = np.ndarray(shape=(256,3), dtype=float)
+  tm_resp_func = np.ndarray(shape=(256,3), dtype=np.float32)
   with open("../cam_vision_pipe/cam_models/NikonD7000/jpg2raw_respFcns.txt", "r") as tm_file:
     tm_data = tm_file.read().splitlines(True)[1:]
     for i,line in enumerate(tm_data):
@@ -179,8 +153,8 @@ def convert_image_to_raw(image_name):
 
   # These two arrays will used as ping-poing buffers for
   # input/output of every kernel.
-  input_im = np.ndarray(shape=orig_im.shape, dtype=float)
-  output_im = np.ndarray(shape=orig_im.shape, dtype=float)
+  input_im = np.ndarray(shape=orig_im.shape, dtype=np.float32)
+  output_im = np.ndarray(shape=orig_im.shape, dtype=np.float32)
 
   scale(orig_im, input_im)
   reverse_tone_map(input_im, output_im)
