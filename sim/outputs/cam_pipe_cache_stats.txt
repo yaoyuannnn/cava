@@ -1,8 +1,0 @@
-system.datapath.dcache.average_pwr 0 # Average dcache dynamic and leakage power.
-system.datapath.dcache.dynamic_pwr 0 # Average dcache dynamic power.
-system.datapath.dcache.leakage_pwr 0 # Average dcache leakage power.
-system.datapath.dcache.area 0 # dcache area.
-system.datapath.tlb.average_pwr -5.70316e+37 # Average tlb dynamic and leakage power.
-system.datapath.tlb.dynamic_pwr 0 # Average tlb dynamic power.
-system.datapath.tlb.leakage_pwr -5.70316e+37 # Average tlb leakage power.
-system.datapath.tlb.area 0 # tlb area.
