@@ -4,8 +4,6 @@ cfg_home=`pwd`
 gem5_dir=${ALADDIN_HOME}/../..
 top_level=`git rev-parse --show-toplevel`
 bin_path=${top_level}/build/cam-vision-gem5-accel
-#  --ruby \
-#  --access-backing-store \
 
 ${gem5_dir}/build/X86/gem5.opt \
   --debug-flags=Aladdin,HybridDatapath \
@@ -19,8 +17,8 @@ ${gem5_dir}/build/X86/gem5.opt \
   --sys-clock=1.25GHz \
   --cpu-clock=2.5GHz \
   --cpu-type=DerivO3CPU \
-  --caches \
-  --l2cache \
+  --ruby \
+  --access-backing-store \
   --l2_size=2097152 \
   --enable_prefetchers \
   --cacheline_size=64 \

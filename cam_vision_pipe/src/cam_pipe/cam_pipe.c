@@ -96,6 +96,21 @@ void cam_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
   acc_l2_dist = malloc_aligned(sizeof(float) * num_ctrl_pts);
 
   // Load camera model parameters for the ISP
+  MAP_ARRAY_TO_ACCEL(LD_PARAMS, "host_TsTw", host_TsTw,
+                     sizeof(float) * 9);
+  MAP_ARRAY_TO_ACCEL(LD_PARAMS, "host_ctrl_pts", host_ctrl_pts,
+                     sizeof(float) * num_ctrl_pts * CHAN_SIZE);
+  MAP_ARRAY_TO_ACCEL(LD_PARAMS, "host_weights", host_weights,
+                     sizeof(float) * num_ctrl_pts * CHAN_SIZE);
+  MAP_ARRAY_TO_ACCEL(LD_PARAMS, "host_coefs", host_coefs,
+                     sizeof(float) * 4 * CHAN_SIZE);
+  MAP_ARRAY_TO_ACCEL(LD_PARAMS, "host_tone_map", host_tone_map,
+                     sizeof(float) * 256 * CHAN_SIZE);
+  INVOKE_KERNEL(LD_PARAMS, load_cam_params_hw, host_TsTw, host_ctrl_pts, host_weights,
+                host_coefs, host_tone_map, acc_TsTw, acc_ctrl_pts, acc_weights,
+                acc_coefs, acc_tone_map);
+
+  // Invoke the ISP
   MAP_ARRAY_TO_ACCEL(ISP, "host_TsTw", host_TsTw,
                      sizeof(float) * 9);
   MAP_ARRAY_TO_ACCEL(ISP, "host_ctrl_pts", host_ctrl_pts,
@@ -106,11 +121,6 @@ void cam_pipe(uint8_t *host_input, uint8_t *host_result, int row_size,
                      sizeof(float) * 4 * CHAN_SIZE);
   MAP_ARRAY_TO_ACCEL(ISP, "host_tone_map", host_tone_map,
                      sizeof(float) * 256 * CHAN_SIZE);
-  INVOKE_KERNEL(ISP, load_cam_params_hw, host_TsTw, host_ctrl_pts, host_weights,
-                host_coefs, host_tone_map, acc_TsTw, acc_ctrl_pts, acc_weights,
-                acc_coefs, acc_tone_map);
-
-  // Invoke the ISP
   MAP_ARRAY_TO_ACCEL(ISP, "host_input", host_input,
                      sizeof(uint8_t) * row_size * col_size * CHAN_SIZE);
   MAP_ARRAY_TO_ACCEL(ISP, "host_result", host_result,

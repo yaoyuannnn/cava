@@ -53,7 +53,7 @@ $(SUBBUILDDIRS):
 %-labelmap: %.c
 	@$(GET_LABELED_STMTS) $^ -- \
                         -I$(LLVM_HOME)/lib/clang/$(LLVM_VERSION)/include \
-                        $(CPPFLAGS) -mf16c -DDMA_INTERFACE_V3 \
+                        $(CPPFLAGS) -mf16c -DDMA_INTERFACE_V3
 	@cat labelmap >> $(BUILD_DIR)/labelmap
 
 $(BUILD_DIR)/full.llvm: $(LLVM_OBJS)

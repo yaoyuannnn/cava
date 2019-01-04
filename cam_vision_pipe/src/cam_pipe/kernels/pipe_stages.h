@@ -6,6 +6,7 @@
 #define CHAN_SIZE 3
 
 #define ISP 0x4
+#define LD_PARAMS 0x5
 
 #define max(a,b) \
   ({ __typeof__ (a) _a = (a); \
