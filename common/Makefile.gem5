@@ -6,7 +6,7 @@ GEM5_CPU = $(BUILD_DIR)/$(EXE)-gem5
 GEM5_ACCEL = $(BUILD_DIR)/$(EXE)-gem5-accel
 
 # -mno-sse
-CFLAGS += -flax-vector-conversions -DGEM5 -DGEM5 -D__USE_F16C_ANYWAYS__
+CFLAGS += -flax-vector-conversions -DGEM5 -DARCHITECTURE=SMV -D__USE_F16C_ANYWAYS__
 GEM5_SIMD_CFLAGS = -msse3 -msse2 -mno-ssse3 -mno-sse4.1 -mno-sse4.2
 LFLAGS += -lz -pthread
 
