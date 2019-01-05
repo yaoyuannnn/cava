@@ -134,3 +134,32 @@ mmapped_file read_all_from_file(const char* filename,
                   input_height);
     return model_file;
 }
+
+mmapped_file read_all_except_input_from_file(const char* filename,
+                                             network_t* network,
+                                             farray_t** weights,
+                                             iarray_t* labels,
+                                             iarray_t* compress_type) {
+    mmapped_file model_file = init_mmapped_file();
+    if (is_txt_file(filename)) {
+        printf("Reading data from text file %s...\n", filename);
+        global_sec_header header = read_global_header_from_txt_file(filename);
+        verify_global_parameters(&header, network);
+        read_weights_from_txt_file(filename, weights);
+        read_labels_from_txt_file(filename, labels);
+        read_compress_type_from_txt_file(filename, compress_type);
+        free_global_sec_header(&header);
+    } else {
+        printf("Reading data from binary file %s...\n", filename);
+        *weights = init_farray(0, false);
+        model_file = open_bin_data_file(filename);
+        global_sec_header global_header =
+                read_global_header_from_bin_file(&model_file);
+        verify_global_parameters(&global_header, network);
+        read_weights_from_bin_file(&model_file, weights);
+        read_labels_from_bin_file(&model_file, labels);
+        read_compress_type_from_bin_file(&model_file, compress_type);
+        free_global_sec_header(&global_header);
+    }
+    return model_file;
+}

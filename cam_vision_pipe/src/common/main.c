@@ -50,11 +50,20 @@ static char prog_doc[] = "\nCamera vision pipeline on gem5-Aladdin.\n";
 static char args_doc[] = "path/to/raw-image-binary path/to/output-image-binary "
                          "path/to/model-config-file";
 static struct argp_option options[] = {
-    { "num-inputs", 'n', "N", 0, "Number of input images" }, { 0 },
+    { "num-inputs", 'n', "N", 0, "Number of input images" },
+    { "data-init-mode", 'd', "D", 0,
+      "Data and weights generation mode (FIXED, FAST_FIXED, RANDOM, "
+      "READ_FILE)." },
     { "data-file", 'f', "F", 0,
       "File to read data and weights from (if data-init-mode == READ_FILE or "
       "save-params is true). *.txt files are decoded as text files, while "
       "*.bin files are decoded as binary files." },
+        { "sigmoid-impl", 'm', "IMPL", 0,
+      "Sigmoid implementation: exp-unit (default), centered-lut, or "
+      "noncentered-lut." },
+    { "num-threads", 't', "THREADS", 0,
+      "Number of worker threads in the thread pool." },
+    { 0 },
 };
 
 // Convert a string to a data initialization mode.
@@ -362,9 +371,17 @@ int main(int argc, char* argv[]) {
 
     mmapped_file model_file = init_mmapped_file();
     if (args.data_mode == READ_FILE) {
-        model_file = read_all_from_file(
+        // Read all except input from file, since the camera pipeline will
+        // produce the input.
+        model_file = read_all_except_input_from_file(
                 args.args[DATA_FILE], &network, &global_weights->data[0].dense,
-                &inputs->data[0].dense, &labels, &compress_type);
+                &labels, &compress_type);
+        inputs->data[0].dense = init_farray(
+                NUM_TEST_CASES * get_dims_size(&input_layer.inputs), true);
+        init_data_from_image(inputs->data[0].dense->d,
+                             &network,
+                             NUM_TEST_CASES,
+                             host_result);
     } else {
         global_weights->data[0].dense = init_farray(total_weight_size, false);
         inputs->data[0].dense = init_farray(

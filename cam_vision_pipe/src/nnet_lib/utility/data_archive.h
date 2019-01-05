@@ -20,4 +20,10 @@ mmapped_file read_all_from_file(const char* filename,
                                 farray_t** data,
                                 iarray_t* labels,
                                 iarray_t* compress_type);
+
+mmapped_file read_all_except_input_from_file(const char* filename,
+                                             network_t* network,
+                                             farray_t** weights,
+                                             iarray_t* labels,
+                                             iarray_t* compress_type);
 #endif
