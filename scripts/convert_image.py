@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+from scipy.stats import rankdata
 import argparse
 import imageio
 import struct
@@ -76,6 +77,38 @@ def remosaic(input_im, output_im):
           # Also divide the green by half to account
           # for interpolation reversal
           output_im[y][x][1] = input_im[y][x][1] / 2
+
+def denoise(image_name):
+  print "Denoising."
+  origin_im = imageio.imread(image_name)
+  print("Input image shape:"), origin_im.shape
+  result_im = np.ndarray(shape=origin_im.shape, dtype=np.uint8)
+
+  input_im = np.ndarray(shape=origin_im.shape, dtype=np.float32)
+  output_im = np.ndarray(shape=origin_im.shape, dtype=np.float32)
+  scale(origin_im, input_im)
+
+  row_size,col_size,ch_size= input_im.shape
+  for row in xrange(row_size):
+    for col in xrange(col_size):
+      for ch in xrange(ch_size):
+        if row > 0 and row < row_size - 1 and \
+           col > 0 and col < col_size - 1:
+          window = np.array([input_im[row-1][col-1][ch], input_im[row-1][col][ch], \
+                             input_im[row-1][col+1][ch], input_im[row][col-1][ch], \
+                             input_im[row][col][ch], input_im[row][col+1][ch],\
+                             input_im[row+1][col-1][ch], input_im[row+1][col][ch], \
+                             input_im[row+1][col+1][ch]])
+          sort = np.sort(window)
+          output_im[row][col][ch] = sort[4]
+        else:
+          output_im[row][col][ch] = input_im[row][col][ch]
+
+  descale(output_im, result_im)
+
+  # Write to the image file
+  output_name = "denoised_" + image_name
+  imageio.imwrite(output_name, result_im)
 
 def renoise(input_im, output_im):
   print "Renoising."
@@ -174,8 +207,10 @@ def main():
       help="Convert a raw image to a binary file")
   parser.add_argument("--binary", "-b",
       help="Convert a binary file to a image")
-  parser.add_argument("--image", "-i",
+  parser.add_argument("--backward", "-B",
       help="Convert an image file to a raw image")
+  parser.add_argument("--denoise", "-d",
+      help="Apply denoising to the image.")
   args = parser.parse_args()
 
   if args.raw != None:
@@ -184,6 +219,8 @@ def main():
     convert_binary_to_image(args.binary)
   elif args.image != None:
     convert_image_to_raw(args.image)
+  elif args.denoise != None:
+    denoise(args.denoise)
 
 if __name__ == "__main__":
   main()
