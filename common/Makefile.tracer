@@ -1,6 +1,6 @@
 include common/Makefile.common
 
-MODULES = cam_pipe nnet_lib/core nnet_lib/utility nnet_lib/arch gem5
+MODULES = common cam_pipe nnet_lib/core nnet_lib/utility nnet_lib/arch gem5
 
 .PHONY: dma-trace-binary run-trace clean-trace src-symlinks
 
