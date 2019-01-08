@@ -1,6 +1,8 @@
 #ifndef _COMMON_DEFS_H_
 #define _COMMON_DEFS_H_
 
+#include <assert.h>
+
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
@@ -220,5 +222,33 @@ typedef unsigned long uint64_t;
     TYPE, output_array_name, input_array_name, DIM_1, DIM_2, DIM_3, DIM_4)     \
         TYPE(*output_array_name)[DIM_1][DIM_2][DIM_3][DIM_4] =                 \
             (TYPE(*)[DIM_1][DIM_2][DIM_3][DIM_4])input_array_name
+
+// Compiler-specific features.
+//
+// ALWAYS_INLINE:
+// We have to disable all function inlining at the global level for Aladdin +
+// LLVM-Tracer to work, but sometimes we do want to force inline functions
+// (otherwise we run into all the issues of function call barriers in Aladdin).
+// Add ALWAYS_INLINE before the function declaration to force inlining on this
+// function.  Don't do this except when we're tracing though; usually it is not
+// necessary and it generates a lot of compiler warnings.
+//
+// ASSERT:
+// Disable asserts within instrumented when tracing.
+//
+// ASSUME_ALIGNED:
+// Tell the compiler to assume a pointer is aligned on some byte boundary. This
+// is not supported in clang 3.4.
+#ifdef TRACE_MODE
+#define ALWAYS_INLINE __attribute__((__always_inline__))
+#define ASSERT(x)
+#define ASSUME_ALIGNED(ptr, alignment) (ptr)
+#else
+#define ALWAYS_INLINE
+#define ASSERT(x) assert(x)
+#define ASSUME_ALIGNED(ptr, args...) __builtin_assume_aligned((ptr), args)
+#endif
+
+#define MAYBE_UNUSED __attribute__((__unused__))
 
 #endif

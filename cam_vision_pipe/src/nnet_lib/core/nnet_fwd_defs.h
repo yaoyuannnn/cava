@@ -1,7 +1,6 @@
 #ifndef _NNET_FWD_DEFS_H_
 #define _NNET_FWD_DEFS_H_
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -388,34 +387,6 @@ typedef struct _sampling_param_t {
 
 #define ASSERT_MEMALIGN(ptr, err) \
     assert(err == 0 && "Failed to allocate memory for " #ptr ".\n");
-
-// Compiler-specific features.
-//
-// ALWAYS_INLINE:
-// We have to disable all function inlining at the global level for Aladdin +
-// LLVM-Tracer to work, but sometimes we do want to force inline functions
-// (otherwise we run into all the issues of function call barriers in Aladdin).
-// Add ALWAYS_INLINE before the function declaration to force inlining on this
-// function.  Don't do this except when we're tracing though; usually it is not
-// necessary and it generates a lot of compiler warnings.
-//
-// ASSERT:
-// Disable asserts within instrumented when tracing.
-//
-// ASSUME_ALIGNED:
-// Tell the compiler to assume a pointer is aligned on some byte boundary. This
-// is not supported in clang 3.4.
-#ifdef TRACE_MODE
-#define ALWAYS_INLINE __attribute__((__always_inline__))
-#define ASSERT(x)
-#define ASSUME_ALIGNED(ptr, alignment) (ptr)
-#else
-#define ALWAYS_INLINE
-#define ASSERT(x) assert(x)
-#define ASSUME_ALIGNED(ptr, args...) __builtin_assume_aligned((ptr), args)
-#endif
-
-#define MAYBE_UNUSED __attribute__((__unused__))
 
 //=------------ GLOBAL VARIABLES ---------------=//
 extern int NUM_TEST_CASES;

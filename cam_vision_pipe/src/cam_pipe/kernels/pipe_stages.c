@@ -105,6 +105,22 @@ void demosaic_fxp(float *input, int row_size, int col_size, float *result) {
         }
 }
 
+ALWAYS_INLINE
+static void swap(float* xp, float* yp) {
+    float temp = *xp;
+    *xp = *yp;
+    *yp = temp;
+}
+
+ALWAYS_INLINE
+static void sort(float arr[], int n) {
+    int i, j;
+    for (i = 0; i < n - 1; i++)
+        for (j = 0; j < n - i - 1; j++)
+            if (arr[j] > arr[j + 1])
+                swap(&arr[j], &arr[j + 1]);
+}
+
 // Simple denoise
 void denoise_fxp(float *input, int row_size, int col_size, float *result) {
   ARRAY_3D(float, _input, input, row_size, col_size);
@@ -112,15 +128,21 @@ void denoise_fxp(float *input, int row_size, int col_size, float *result) {
 
   dn_chan:
   for (int chan = 0; chan < CHAN_SIZE; chan++)
-    dm_row:
+    dn_row:
     for (int row = 0; row < row_size; row++)
-      dm_col:
+      dn_col:
       for (int col = 0; col < col_size; col++)
-        if (row >= 2 && row < row_size - 2 && col >= 2 && col < col_size - 2) {
-          float a =
-              max(max(_input[chan][row][col - 2], _input[chan][row][col + 2]),
-                  max(_input[chan][row - 2][col], _input[chan][row + 2][col]));
-          _result[chan][row][col] = max(min(_input[chan][row][col], a), 0);
+        if (row >= 1 && row < row_size - 1 && col >= 1 && col < col_size - 1) {
+          float filter[9];
+          dn_slide_row:
+          for (int i = row-1; i < row+2; i++)
+            dn_slide_col:
+            for (int j = col-1; j < col+2; j++) {
+              int index = (i - row + 1) * 3 + j - col + 1;
+              filter[index] = _input[chan][i][j];
+            }
+          sort(filter, 9);
+          _result[chan][row][col] = filter[4];
         } else {
           _result[chan][row][col] = _input[chan][row][col];
         }
