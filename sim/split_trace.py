@@ -11,6 +11,7 @@
 import argparse
 import gzip
 import os
+import io
 import re
 import time
 
@@ -68,28 +69,29 @@ def split_trace(trace_fname):
 
   print "Starting time:", time.ctime()
 
-  with gzip.open(trace_fname, "rb") as main_trace:
-    # Just look for and write the labelmap, if it exists.
-    for line in strip(main_trace):
-      if line == LABELMAP_START:
-        labelmap = parse_labelmap(main_trace)
+  with gzip.open(trace_fname, "rb") as gz_file:
+    with io.BufferedReader(gz_file) as main_trace:
+      # Just look for and write the labelmap, if it exists.
+      for line in strip(main_trace):
+        if line == LABELMAP_START:
+          labelmap = parse_labelmap(main_trace)
+          break
         break
-      break
 
-    # Now process the remainder of the trace.
-    for line in strip(main_trace):
-      if line[0] == "0":
+      # Now process the remainder of the trace.
+      for line in strip(main_trace):
         components = line.split(",")
-        func_name = components[2]
-        if not func_name in top_level_funcs:
-          top_level_funcs.append(func_name)
-          sub_trace_files[func_name] = gzip.open("%s.gz" % func_name, "wb")
-          sub_trace_files[func_name].write(labelmap)
-          print "Found top level function", func_name
-        else:
-          print "Copying function", func_name
+        if components[0] == "entry":
+          func_name = components[1]
+          if not func_name in top_level_funcs:
+            top_level_funcs.append(func_name)
+            sub_trace_files[func_name] = io.BufferedWriter(gzip.open("%s.gz" % func_name, "wb"))
+            sub_trace_files[func_name].write(labelmap)
+            print "Found top level function", func_name
+          else:
+            print "Copying function", func_name
 
-        copy_function(main_trace, line, func_name, sub_trace_files[func_name])
+          copy_function(main_trace, line, func_name, sub_trace_files[func_name])
 
   for f in sub_trace_files.itervalues():
     f.close()
