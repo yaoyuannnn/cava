@@ -44,18 +44,10 @@ void isp_hw(uint8_t *host_input, uint8_t *host_result, int row_size,
             float *acc_tone_map, float *acc_l2_dist) {
   dmaLoad(acc_input, host_input,
           row_size * col_size * CHAN_SIZE * sizeof(uint8_t));
-  scale_fxp(acc_input, row_size, col_size, acc_input_scaled);
-  demosaic_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled);
-  denoise_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled);
-  transform_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled,
-                acc_TsTw);
-  gamut_map_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled,
-                acc_ctrl_pts, acc_weights, acc_coefs, acc_l2_dist);
-  tone_map_fxp(acc_input_scaled, row_size, col_size, acc_tone_map,
-               acc_result_scaled);
-  // tone_map_approx_fxp(acc_input_scaled, row_size, col_size,
-  // acc_result_scaled);
-  descale_fxp(acc_result_scaled, row_size, col_size, acc_result);
+  isp_hw_impl(row_size, col_size, acc_input, acc_result,
+              acc_input_scaled, acc_result_scaled,
+              acc_TsTw, acc_ctrl_pts, acc_weights,
+              acc_coefs, acc_tone_map, acc_l2_dist);
   dmaStore(host_result, acc_result,
            row_size * col_size * CHAN_SIZE * sizeof(uint8_t));
 }

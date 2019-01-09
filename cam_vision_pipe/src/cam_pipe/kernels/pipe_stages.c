@@ -3,6 +3,7 @@
 #include "pipe_stages.h"
 #include "utility/cam_pipe_utility.h"
 
+ALWAYS_INLINE
 void scale_fxp(uint8_t *input, int row_size, int col_size, float *output) {
   ARRAY_3D(uint8_t, _input, input, row_size, col_size);
   ARRAY_3D(float, _output, output, row_size, col_size);
@@ -15,6 +16,7 @@ void scale_fxp(uint8_t *input, int row_size, int col_size, float *output) {
         _output[chan][row][col] = _input[chan][row][col] * 1.0 / 255;
 }
 
+ALWAYS_INLINE
 void descale_fxp(float *input, int row_size, int col_size, uint8_t *output) {
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(uint8_t, _output, output, row_size, col_size);
@@ -30,6 +32,7 @@ void descale_fxp(float *input, int row_size, int col_size, uint8_t *output) {
 // Demosaicing stage
 // G R
 // B G
+ALWAYS_INLINE
 void demosaic_fxp(float *input, int row_size, int col_size, float *result) {
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
@@ -106,22 +109,21 @@ void demosaic_fxp(float *input, int row_size, int col_size, float *result) {
 }
 
 ALWAYS_INLINE
-static void swap(float* xp, float* yp) {
-    float temp = *xp;
-    *xp = *yp;
-    *yp = temp;
-}
-
-ALWAYS_INLINE
 static void sort(float arr[], int n) {
     int i, j;
+    dn_sort_i:
     for (i = 0; i < n - 1; i++)
+        dn_sort_j:
         for (j = 0; j < n - i - 1; j++)
-            if (arr[j] > arr[j + 1])
-                swap(&arr[j], &arr[j + 1]);
+            if (arr[j] > arr[j + 1]) {
+                float temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
 }
 
 // Simple denoise
+ALWAYS_INLINE
 void denoise_fxp(float *input, int row_size, int col_size, float *result) {
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
@@ -149,6 +151,7 @@ void denoise_fxp(float *input, int row_size, int col_size, float *result) {
 }
 
 // Color map and white balance transform
+ALWAYS_INLINE
 void transform_fxp(float *input, int row_size, int col_size, float *result,
                    float *TsTw_tran) {
   ARRAY_3D(float, _input, input, row_size, col_size);
@@ -171,6 +174,7 @@ void transform_fxp(float *input, int row_size, int col_size, float *result,
 //
 // Weighted radial basis function for gamut mapping
 //
+ALWAYS_INLINE
 void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
                    float *ctrl_pts, float *weights, float *coefs, float *l2_dist) {
   ARRAY_3D(float, _input, input, row_size, col_size);
@@ -213,6 +217,7 @@ void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
 }
 
 // Tone mapping
+ALWAYS_INLINE
 void tone_map_fxp(float *input, int row_size, int col_size, float *tone_map,
                   float *result) {
   ARRAY_3D(float, _input, input, row_size, col_size);
@@ -231,6 +236,7 @@ void tone_map_fxp(float *input, int row_size, int col_size, float *tone_map,
 }
 
 // Approximate tone mapping
+ALWAYS_INLINE
 void tone_map_approx_fxp(float *input, int row_size, int col_size,
                          float *result) {
   ARRAY_3D(float, _input, input, row_size, col_size);
@@ -250,4 +256,28 @@ void tone_map_approx_fxp(float *input, int row_size, int col_size,
           _result[chan][row][col] = _input[chan][row][col] / 4 + 192;
         _result[chan][row][col] = max(min(_result[chan][row][col], 255), 0);
       }
+}
+
+void isp_hw_impl(int row_size,
+                 int col_size,
+                 uint8_t* acc_input,
+                 uint8_t* acc_result,
+                 float* acc_input_scaled,
+                 float* acc_result_scaled,
+                 float* acc_TsTw,
+                 float* acc_ctrl_pts,
+                 float* acc_weights,
+                 float* acc_coefs,
+                 float* acc_tone_map,
+                 float* acc_l2_dist) {
+  scale_fxp(acc_input, row_size, col_size, acc_input_scaled);
+  demosaic_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled);
+  denoise_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled);
+  transform_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled,
+                acc_TsTw);
+  gamut_map_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled,
+                acc_ctrl_pts, acc_weights, acc_coefs, acc_l2_dist);
+  tone_map_fxp(acc_input_scaled, row_size, col_size, acc_tone_map,
+               acc_result_scaled);
+  descale_fxp(acc_result_scaled, row_size, col_size, acc_result);
 }
