@@ -333,18 +333,23 @@ int main(int argc, char* argv[]) {
     // Sanity check on the dimensionality of the input layer. It should match
     // the image generated from the camera pipeline.
     if (row_size != network.layers[0].inputs.rows ||
-        col_size != network.layers[0].inputs.cols ||
-        CHAN_SIZE != network.layers[0].inputs.height) {
-        fprintf(stderr,
-                "Input layer shape: %d x %d x %d. Does not match the image "
-                "from the camera pipeline! Image shape: %d x %d x %d\n",
-                network.layers[0].inputs.rows,
-                network.layers[0].inputs.cols,
-                network.layers[0].inputs.height,
-                row_size,
-                col_size,
-                CHAN_SIZE);
-        exit(1);
+        col_size != network.layers[0].inputs.cols) {
+        if (network.layers[0].inputs.height == 1) {
+            printf("The DNN model requiers a grayscale input image. Converting "
+                   "the RGB image into grayscale.\n");
+            convert_image_to_grayscale(host_result, row_size, col_size);
+        } else if (CHAN_SIZE != network.layers[0].inputs.height) {
+            fprintf(stderr,
+                    "Input layer shape: %d x %d x %d. Does not match the image "
+                    "from the camera pipeline! Image shape: %d x %d x %d\n",
+                    network.layers[0].inputs.rows,
+                    network.layers[0].inputs.cols,
+                    network.layers[0].inputs.height,
+                    row_size,
+                    col_size,
+                    CHAN_SIZE);
+            exit(1);
+        }
     }
 
     // Initialize weights, data, and labels.
