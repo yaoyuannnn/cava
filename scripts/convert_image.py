@@ -8,6 +8,7 @@ import struct
 import math
 import random
 import cmodule
+from PIL import Image
 
 def convert_raw_to_binary(raw_name):
     im = imageio.imread(raw_name)
@@ -201,24 +202,33 @@ def convert_image_to_raw(image_name):
   output_name = "raw_" + image_name
   imageio.imwrite(output_name, result_im)
 
+def convert_image_to_grayscale(image_name):
+  img = Image.open(image_name).convert('LA')
+  output_name = "grayscale_" + image_name
+  img.save(output_name)
+
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument("--raw", "-r",
-      help="Convert a raw image to a binary file")
+      help="Convert a raw image to a binary file.")
   parser.add_argument("--binary", "-b",
-      help="Convert a binary file to a image")
+      help="Convert a binary file to a image.")
   parser.add_argument("--backward", "-B",
-      help="Convert an image file to a raw image")
+      help="Convert an image file to a raw image.")
   parser.add_argument("--denoise", "-d",
       help="Apply denoising to the image.")
+  parser.add_argument("--grayscale", "-g",
+      help="Convert an RGB image into grayscale.")
   args = parser.parse_args()
 
   if args.raw != None:
     convert_raw_to_binary(args.raw)
   elif args.binary != None:
     convert_binary_to_image(args.binary)
-  elif args.image != None:
-    convert_image_to_raw(args.image)
+  elif args.backward != None:
+    convert_image_to_raw(args.backward)
+  elif args.grayscale != None:
+    convert_image_to_grayscale(args.grayscale)
   elif args.denoise != None:
     denoise(args.denoise)
 
