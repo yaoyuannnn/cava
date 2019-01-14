@@ -780,8 +780,8 @@ void smv_inner_product_layer_impl_rowwise(data_list* host_activations,
                                            curr_layer->output_req == IO_ACP);
         fp16array_t* decomp_result_buf = NULL;
         if (use_decomp_result_buf) {
-            decomp_result_buf =
-                    init_fp16array(tile->strips[0].weights_dims[1], true);
+            decomp_result_buf = init_fp16array(
+                    next_multiple(tile->strips[0].weights_dims[1], 16), true);
         }
         float16* curr_dense_weights_loc =
                 (float16*)curr_layer->host_weights->data[tile_num].dense_hp->d;
