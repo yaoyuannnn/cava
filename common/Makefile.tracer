@@ -65,7 +65,7 @@ $(BUILD_DIR)/full.s: $(BUILD_DIR)/full.llvm
 
 $(BUILD_DIR)/$(EXE)-instrumented: $(BUILD_DIR)/full.s
 	@echo Producing final binary...
-	@$(CC) -g -O0 -fno-inline -o $@ $^ $(LFLAGS)
+	@$(CXX) -g -O0 -fno-inline -o $@ $^ $(LFLAGS)
 
 %-opt.llvm: %.c %-labelmap
 	@echo Building $<
