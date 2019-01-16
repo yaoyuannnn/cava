@@ -14,7 +14,7 @@ ${PROGRAM}: ${PROGRAM}.cc
 	$(CXX) -shared -o _${LIBRARY}.so *.o
 
 run:
-	./convert_image.py --image reference.png
+	./convert_image.py --backward reference.png
 	./convert_image.py --raw raw_reference.png
 	../build/cam-vision-native raw_reference.bin result.bin ../sim/test.conf
 	./convert_image.py --binary result.bin
