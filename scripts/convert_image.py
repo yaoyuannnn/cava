@@ -205,9 +205,9 @@ def convert_image_to_raw(image_name):
   reverse_tone_map(input_im, output_im)
   gamut_map(output_im, num_cps, input_im, True)
   reverse_color_transform(input_im, wb_index, output_im)
-  renoise(output_im, input_im)
-  remosaic(input_im, output_im)
-  descale(output_im, result_im)
+  #renoise(output_im, input_im)
+  remosaic(output_im, input_im)
+  descale(input_im, result_im)
 
   # Write to the image file
   output_name = "raw_" + image_name
