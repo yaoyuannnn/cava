@@ -275,9 +275,9 @@ void isp_hw_impl(int row_size,
   denoise_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled);
   transform_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled,
                 acc_TsTw);
-  //gamut_map_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled,
-  //              acc_ctrl_pts, acc_weights, acc_coefs, acc_l2_dist);
-  tone_map_fxp(acc_result_scaled, row_size, col_size, acc_tone_map,
-               acc_input_scaled);
-  descale_fxp(acc_input_scaled, row_size, col_size, acc_result);
+  gamut_map_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled,
+                acc_ctrl_pts, acc_weights, acc_coefs, acc_l2_dist);
+  tone_map_fxp(acc_input_scaled, row_size, col_size, acc_tone_map,
+               acc_result_scaled);
+  descale_fxp(acc_result_scaled, row_size, col_size, acc_result);
 }
