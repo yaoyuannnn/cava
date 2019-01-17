@@ -1,5 +1,7 @@
-PROGRAM = rev_gamut_map
+PROGRAM = gamut_map
 LIBRARY = cmodule
+IMAGE = reference.png
+IMAGE_NAME = $(basename $(IMAGE))
 
 CXX  = g++
 CFLAGS  = -c -fPIC -O2
@@ -14,9 +16,9 @@ ${PROGRAM}: ${PROGRAM}.cc
 	$(CXX) -shared -o _${LIBRARY}.so *.o
 
 run:
-	./convert_image.py --backward reference.png
-	./convert_image.py --raw raw_reference.png
-	../build/cam-vision-native raw_reference.bin result.bin ../sim/test.conf
+	./convert_image.py --backward $(IMAGE)
+	./convert_image.py --raw raw_$(IMAGE)
+	../build/cam-vision-native raw_$(IMAGE_NAME).bin result.bin ../sim/test.conf
 	./convert_image.py --binary result.bin
 
 clean:

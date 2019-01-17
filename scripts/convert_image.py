@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+from numpy import linalg as LA
 from scipy.stats import rankdata
 import argparse
 import imageio
@@ -143,17 +144,27 @@ def reverse_color_transform(input_im, wb_index, output_im):
                 input_im[row][col][2] * tr_inv[chan][2], \
                 0);
 
-def reverse_gamut_map(input_im, num_cps, output_im):
-  print "Reverse gamut mapping."
+def gamut_map(input_im, num_cps, output_im, reverse=True):
+  if reverse:
+    print "Reverse",
+  print "gamut mapping."
   gm_cp = np.ndarray(shape=(num_cps, 3), dtype=np.float32)
   gm_weight = np.ndarray(shape=(num_cps, 3), dtype=np.float32)
   gm_coef = np.ndarray(shape=(4, 3), dtype=np.float32)
-  with open("../cam_vision_pipe/cam_models/NikonD7000/jpg2raw_ctrlPoints.txt", "r") as gm_cp_file:
+
+  if reverse:
+    gm_cp_fname = "../cam_vision_pipe/cam_models/NikonD7000/jpg2raw_ctrlPoints.txt"
+    gm_coef_fname = "../cam_vision_pipe/cam_models/NikonD7000/jpg2raw_coefs.txt"
+  else:
+    gm_cp_fname = "../cam_vision_pipe/cam_models/NikonD7000/raw2jpg_ctrlPoints.txt"
+    gm_coef_fname = "../cam_vision_pipe/cam_models/NikonD7000/raw2jpg_coefs.txt"
+
+  with open(gm_cp_fname, "r") as gm_cp_file:
     gm_cp_data = gm_cp_file.read().splitlines(True)[1:]
     for i,line in enumerate(gm_cp_data):
       gm_cp[i] = line.split()
 
-  with open("../cam_vision_pipe/cam_models/NikonD7000/jpg2raw_coefs.txt", "r") as gm_coef_file:
+  with open(gm_coef_fname, "r") as gm_coef_file:
     gm_coef_data = gm_coef_file.read().splitlines(True)[1:]
     for i, line in enumerate(gm_coef_data):
       if i < num_cps:
@@ -162,7 +173,7 @@ def reverse_gamut_map(input_im, num_cps, output_im):
         gm_coef[i-num_cps] = line.split()
 
   # Use the external C++ implementation for better performance.
-  cmodule.rev_gamut_map(input_im, output_im, gm_cp, gm_weight, gm_coef)
+  cmodule.gamut_map(input_im, output_im, gm_cp, gm_weight, gm_coef)
 
 def reverse_tone_map(input_im, output_im):
   print "Reverse tone mapping."
@@ -192,7 +203,7 @@ def convert_image_to_raw(image_name):
 
   scale(orig_im, input_im)
   reverse_tone_map(input_im, output_im)
-  reverse_gamut_map(output_im, num_cps, input_im)
+  gamut_map(output_im, num_cps, input_im, True)
   reverse_color_transform(input_im, wb_index, output_im)
   renoise(output_im, input_im)
   remosaic(input_im, output_im)
