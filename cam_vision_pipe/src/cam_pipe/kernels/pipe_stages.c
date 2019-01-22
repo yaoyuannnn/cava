@@ -34,6 +34,7 @@ void descale_fxp(float *input, int row_size, int col_size, uint8_t *output) {
 // B G
 ALWAYS_INLINE
 void demosaic_fxp(float *input, int row_size, int col_size, float *result) {
+  PRINT("Demosaicing.\n");
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
 
@@ -125,6 +126,7 @@ static void sort(float arr[], int n) {
 // Simple denoise
 ALWAYS_INLINE
 void denoise_fxp(float *input, int row_size, int col_size, float *result) {
+  PRINT("Denoising.\n");
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
 
@@ -154,6 +156,7 @@ void denoise_fxp(float *input, int row_size, int col_size, float *result) {
 ALWAYS_INLINE
 void transform_fxp(float *input, int row_size, int col_size, float *result,
                    float *TsTw_tran) {
+  PRINT("Color mapping.\n");
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
   ARRAY_2D(float, _TsTw_tran, TsTw_tran, 3);
@@ -177,6 +180,7 @@ void transform_fxp(float *input, int row_size, int col_size, float *result,
 ALWAYS_INLINE
 void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
                    float *ctrl_pts, float *weights, float *coefs, float *l2_dist) {
+  PRINT("Gamut mapping.\n");
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
   ARRAY_2D(float, _ctrl_pts, ctrl_pts, 3);
@@ -220,6 +224,7 @@ void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
 ALWAYS_INLINE
 void tone_map_fxp(float *input, int row_size, int col_size, float *tone_map,
                   float *result) {
+  PRINT("Tone mapping.\n");
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
   ARRAY_2D(float, _tone_map, tone_map, 3);
@@ -239,6 +244,7 @@ void tone_map_fxp(float *input, int row_size, int col_size, float *tone_map,
 ALWAYS_INLINE
 void tone_map_approx_fxp(float *input, int row_size, int col_size,
                          float *result) {
+  PRINT("Approximate tone mapping.\n");
   ARRAY_3D(float, _input, input, row_size, col_size);
   ARRAY_3D(float, _result, result, row_size, col_size);
 

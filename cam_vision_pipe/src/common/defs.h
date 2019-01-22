@@ -242,10 +242,12 @@ typedef unsigned long uint64_t;
 #ifdef TRACE_MODE
 #define ALWAYS_INLINE __attribute__((__always_inline__))
 #define ASSERT(x)
+#define PRINT(args...)
 #define ASSUME_ALIGNED(ptr, alignment) (ptr)
 #else
 #define ALWAYS_INLINE
 #define ASSERT(x) assert(x)
+#define PRINT(args...) printf(args)
 #define ASSUME_ALIGNED(ptr, args...) __builtin_assume_aligned((ptr), args)
 #endif
 
