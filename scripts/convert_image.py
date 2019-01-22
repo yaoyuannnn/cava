@@ -5,6 +5,7 @@ from numpy import linalg as LA
 from scipy.stats import rankdata
 import argparse
 import imageio
+import cv2
 import struct
 import math
 import random
@@ -32,7 +33,7 @@ def convert_binary_to_image(bin_name):
 
     # Write to the image file
     im_name = bin_name.replace('bin', 'png')
-    imageio.imwrite(im_name, im)
+    cv2.imwrite(im_name, im[...,::-1])
 
 #------------------------------------------------------------
 # Functions for reverting an image to a raw image
@@ -41,7 +42,8 @@ def scale(input_im, output_im):
   np.copyto(output_im, np.divide(input_im, 255.0))
 
 def descale(input_im, output_im):
-  np.copyto(output_im, np.multiply(input_im, 255).astype(np.uint8))
+  np.copyto(output_im, np.minimum(np.multiply(input_im, 255), \
+            255).astype(np.uint8))
 
 def remosaic(input_im, output_im):
   print "Remosaicing."
@@ -110,7 +112,7 @@ def denoise(image_name):
 
   # Write to the image file
   output_name = "denoised_" + image_name
-  imageio.imwrite(output_name, result_im)
+  cv2.imwrite(output_name, result_im[...,::-1])
 
 def renoise(input_im, output_im):
   print "Renoising."
@@ -196,7 +198,7 @@ def convert_image_to_raw(image_name):
   print("Input image shape:"), orig_im.shape
   result_im = np.ndarray(shape=orig_im.shape, dtype=np.uint8)
 
-  # These two arrays will used as ping-poing buffers for
+  # These two arrays will used as ping-pong buffers for
   # input/output of every kernel.
   input_im = np.ndarray(shape=orig_im.shape, dtype=np.float32)
   output_im = np.ndarray(shape=orig_im.shape, dtype=np.float32)
@@ -211,7 +213,7 @@ def convert_image_to_raw(image_name):
 
   # Write to the image file
   output_name = "raw_" + image_name
-  imageio.imwrite(output_name, result_im)
+  cv2.imwrite(output_name, result_im[...,::-1])
 
 def convert_image_to_grayscale(image_name):
   img = Image.open(image_name).convert('LA')
