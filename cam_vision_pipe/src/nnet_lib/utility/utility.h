@@ -160,10 +160,6 @@ fp16array_t* create_new_fp16array_if_necessary(fp16array_t* array,
 farray_t* copy_farray(farray_t* existing);
 fp16array_t* copy_fp16array(fp16array_t* existing);
 
-void swap_pointers(void** ptr1, void** ptr2);
-#define SWAP_PTRS(a_ptr, b_ptr)                                                \
-    swap_pointers((void**)&(a_ptr), (void**)&(b_ptr))
-
 #ifdef BITWIDTH_REDUCTION
 // Don't add this function unless we want to model bit width quantization
 // effects. In particular, do not enable this if we are building a trace.  We

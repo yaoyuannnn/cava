@@ -794,10 +794,3 @@ fp16array_t* copy_fp16array(fp16array_t* existing) {
     memcpy(copy->d, existing->d, existing->size * sizeof(float));
     return copy;
 }
-
-// Swap the pointers stored in ptr1 and ptr2.
-void swap_pointers(void** ptr1, void** ptr2) {
-    void* temp = *ptr1;
-    *ptr1 = *ptr2;
-    *ptr2 = temp;
-}

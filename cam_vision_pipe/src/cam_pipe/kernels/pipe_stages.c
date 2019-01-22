@@ -276,14 +276,38 @@ void isp_hw_impl(int row_size,
                  float* acc_coefs,
                  float* acc_tone_map,
                  float* acc_l2_dist) {
-  scale_fxp(acc_input, row_size, col_size, acc_input_scaled);
-  demosaic_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled);
-  denoise_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled);
-  transform_fxp(acc_input_scaled, row_size, col_size, acc_result_scaled,
-                acc_TsTw);
-  gamut_map_fxp(acc_result_scaled, row_size, col_size, acc_input_scaled,
-                acc_ctrl_pts, acc_weights, acc_coefs, acc_l2_dist);
-  tone_map_fxp(acc_input_scaled, row_size, col_size, acc_tone_map,
-               acc_result_scaled);
-  descale_fxp(acc_result_scaled, row_size, col_size, acc_result);
+    float* input_scaled_internal;
+    float* result_scaled_internal;
+    input_scaled_internal = acc_input_scaled;
+    result_scaled_internal = acc_result_scaled;
+
+    scale_fxp(acc_input, row_size, col_size, acc_input_scaled);
+    demosaic_fxp(
+            input_scaled_internal, row_size, col_size, result_scaled_internal);
+    SWAP_PTRS(input_scaled_internal, result_scaled_internal);
+    denoise_fxp(
+            input_scaled_internal, row_size, col_size, result_scaled_internal);
+    SWAP_PTRS(input_scaled_internal, result_scaled_internal);
+    transform_fxp(input_scaled_internal,
+                  row_size,
+                  col_size,
+                  result_scaled_internal,
+                  acc_TsTw);
+    SWAP_PTRS(input_scaled_internal, result_scaled_internal);
+    gamut_map_fxp(input_scaled_internal,
+                  row_size,
+                  col_size,
+                  result_scaled_internal,
+                  acc_ctrl_pts,
+                  acc_weights,
+                  acc_coefs,
+                  acc_l2_dist);
+    SWAP_PTRS(input_scaled_internal, result_scaled_internal);
+    tone_map_fxp(input_scaled_internal,
+                 row_size,
+                 col_size,
+                 acc_tone_map,
+                 result_scaled_internal);
+    SWAP_PTRS(input_scaled_internal, result_scaled_internal);
+    descale_fxp(input_scaled_internal, row_size, col_size, acc_result);
 }
