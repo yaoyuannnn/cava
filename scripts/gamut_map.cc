@@ -1,5 +1,5 @@
 #include <iostream>
-#include <math.h>
+#include <cmath>
 
 #include "gamut_map.h"
 
@@ -32,16 +32,16 @@ void gamut_map(float* input,
                                      (_input[row][col][2] - _ctrl_pts[cp][2]));
             }
             for (int chan = 0; chan < chan_size; chan++) {
-                _result[row][col][chan] = 0.0;
+                float chan_val = 0.0;
                 for (int cp = 0; cp < num_cps; cp++) {
-                    _result[row][col][chan] += l2_dist[cp] * _weights[cp][chan];
+                    chan_val += l2_dist[cp] * _weights[cp][chan];
                 }
                 // Add on the biases for the RBF
-                _result[row][col][chan] +=
-                        _coefs[0][chan] +
-                        _coefs[1][chan] * _input[row][col][0] +
-                        _coefs[2][chan] * _input[row][col][1] +
-                        _coefs[3][chan] * _input[row][col][2];
+                chan_val += _coefs[0][chan] +
+                            _coefs[1][chan] * _input[row][col][0] +
+                            _coefs[2][chan] * _input[row][col][1] +
+                            _coefs[3][chan] * _input[row][col][2];
+                _result[row][col][chan] = (chan_val > 0) ? chan_val : 0;
             }
         }
     }
