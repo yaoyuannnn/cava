@@ -205,17 +205,16 @@ void gamut_map_fxp(float *input, int row_size, int col_size, float *result,
       }
       gm_rbf_chan:
       for (int chan = 0; chan < CHAN_SIZE; chan++) {
-        _result[chan][row][col] = 0.0;
+        float chan_val = 0.0;
         gm_rbf_cp1:
         for (int cp = 0; cp < num_ctrl_pts; cp++) {
-          _result[chan][row][col] +=
-              l2_dist[cp] * _weights[cp][chan];
+          chan_val += l2_dist[cp] * _weights[cp][chan];
         }
         // Add on the biases for the RBF
-        _result[chan][row][col] += _coefs[0][chan] +
-                                   _coefs[1][chan] * _input[0][row][col] +
-                                   _coefs[2][chan] * _input[1][row][col] +
-                                   _coefs[3][chan] * _input[2][row][col];
+        chan_val += _coefs[0][chan] + _coefs[1][chan] * _input[0][row][col] +
+                    _coefs[2][chan] * _input[1][row][col] +
+                    _coefs[3][chan] * _input[2][row][col];
+        _result[chan][row][col] = max(chan_val, 0);
       }
     }
 }
