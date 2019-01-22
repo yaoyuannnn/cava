@@ -36,6 +36,7 @@ void write_image_to_binary(char *file_path, uint8_t *image, int row_size, int co
   int size = row_size * col_size * CHAN_SIZE;
   fwrite(image, sizeof(uint8_t), size, fp);
   fclose(fp);
+  fflush(fp);
 }
 
 float *transpose_mat(float *inmat, int width, int height) {
