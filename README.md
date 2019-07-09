@@ -2,12 +2,12 @@
 
 CAVA is a library for building and simulating _camera vision pipelines_.  It is
 written to work with the
-[gem5-aladdin](https://github.com/harvard-acc/gem5-aladdin) SoC simulator. 
+[gem5-aladdin](https://github.com/harvard-acc/gem5-aladdin) SoC simulator.
 
 
 CAVA consists of two parts:
 1. An *Image Signal Processor (ISP)* (a configurable five-stage pipeline)
-2. A DNN framework (*SMAUG*). 
+2. A DNN framework (*SMAUG*).
 
 In SMAUG, several reference implementations are provided, along with a model of
 an actual SoC containing multiple DNN accelerators.
