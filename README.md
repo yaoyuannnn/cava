@@ -85,11 +85,11 @@ To build and run the default camera vision pipeline:
 
 ## The CAVA Frontend – An ISP Model
 An *Image Signal Processor (ISP)* converts the raw pixels produced by camera
-sensors to useful images. 
+sensors to useful images.
 
 The default ISP kernel is modeled after the [Nikon-D7000
 camera](https://en.wikipedia.org/wiki/Nikon_D7000*). It contains a five-stage
-camera pipeline: 
+camera pipeline:
 
 1. **Demosaicing:** _Interpolate_ undersampled sensors to produce a mosaic of RGB
    pixel intensities
